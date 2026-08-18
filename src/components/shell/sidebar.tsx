@@ -1,11 +1,25 @@
 import { getTranslations } from "next-intl/server";
-import { CarFront, HelpCircle, KeyRound, Settings, Truck, Users } from "lucide-react";
+import {
+  CarFront,
+  HelpCircle,
+  History,
+  KeyRound,
+  Settings,
+  Truck,
+  Users,
+} from "lucide-react";
 
 import { NavLink } from "@/components/shell/nav-link";
 import { NewDeliveryTrigger } from "@/components/new-delivery/new-delivery-trigger";
 import { Separator } from "@/components/ui/separator";
 
-export async function Sidebar({ orgName }: { orgName: string }) {
+export async function Sidebar({
+  orgName,
+  today,
+}: {
+  orgName: string;
+  today: string;
+}) {
   const t = await getTranslations();
   const iconProps = { className: "size-[18px]", strokeWidth: 2 };
 
@@ -19,11 +33,12 @@ export async function Sidebar({ orgName }: { orgName: string }) {
       </div>
 
       <div className="px-4 pb-4">
-        <NewDeliveryTrigger className="w-full" />
+        <NewDeliveryTrigger defaultDate={today} className="w-full" />
       </div>
 
       <nav aria-label={t("nav.deliveries")} className="flex flex-col gap-1 px-3">
         <NavLink href="/" exact label={t("nav.deliveries")} icon={<Truck {...iconProps} />} />
+        <NavLink href="/orders" label={t("nav.history")} icon={<History {...iconProps} />} />
         <NavLink href="/clients" label={t("nav.patients")} icon={<Users {...iconProps} />} />
         <NavLink href="/drivers" label={t("nav.drivers")} icon={<CarFront {...iconProps} />} />
         <NavLink href="/invites" label={t("nav.codes")} icon={<KeyRound {...iconProps} />} />

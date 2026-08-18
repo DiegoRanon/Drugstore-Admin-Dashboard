@@ -1,4 +1,4 @@
-import type { Order, OrderStatus } from "@/api/types";
+import type { Driver, Order, OrderStatus } from "@/api/types";
 
 /**
  * Presentation metadata per status. Colour is one of three signals here — the
@@ -122,4 +122,15 @@ export function groupByWindow(orders: Order[]): {
     AM: sortForBoard(orders.filter((o) => o.delivery_window === "AM")),
     PM: sortForBoard(orders.filter((o) => o.delivery_window === "PM")),
   };
+}
+
+/**
+ * Orders carry `driver_id` only, so the board joins names against the cached
+ * roster (PRD 9.3). Fine at this scale; worth revisiting past a few dozen
+ * drivers.
+ */
+export type DriverIndex = ReadonlyMap<string, Driver>;
+
+export function indexDrivers(drivers: Driver[]): DriverIndex {
+  return new Map(drivers.map((driver) => [driver.id, driver]));
 }

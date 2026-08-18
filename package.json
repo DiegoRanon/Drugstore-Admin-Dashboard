@@ -10,7 +10,10 @@
     "typecheck": "next typegen && tsc --noEmit",
     "api:types": "openapi-typescript openapi.json -o src/api/schema.d.ts",
     "verify:api": "node --conditions=react-server --import tsx scripts/verify-api.ts",
-    "verify:session": "node --import tsx scripts/verify-session.ts"
+    "verify:session": "node --import tsx scripts/verify-session.ts",
+    "verify:board": "node --import tsx scripts/verify-board.ts",
+    "verify:all": "npm run verify:api && npm run verify:session && npm run verify:board",
+    "verify:compliance": "node --import tsx scripts/verify-compliance.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -44,6 +47,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "openapi-typescript": "^7.13.0",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5"

@@ -21,10 +21,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ORDER_DETAIL } from "@/fixtures";
 import type { Locale } from "@/i18n/config";
+import { ApiError } from "@/lib/api/errors";
+import { listDrivers } from "@/lib/dal/drivers";
+import { getOrder } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
-import { formatMoney, formatTimestamp } from "@/lib/format";
+import { formatMoney, formatTimestamp, shortName } from "@/lib/format";
 import { hasPaymentDiscrepancy, isTerminal, shortReference } from "@/lib/orders";
 import { cn } from "@/lib/utils";
 
@@ -35,18 +37,56 @@ import { cn } from "@/lib/utils";
  */
 const ADMIN_TRANSITIONS: OrderTransition[] = ["cancel"];
 
+/** Renders patient data: never prerendered, never cached (PRD 8.2). */
+export const dynamic = "force-dynamic";
+
+/**
+ * This read is audit-logged server-side — one row per call, recording who saw
+ * which patient's information. An unknown id must therefore land on a 404, not
+ * on a retry loop that writes the same row repeatedly.
+ */
+async function loadOrder(id: string) {
+  try {
+    return await getOrder(id);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) notFound();
+    throw error;
+  }
+}
+
 export default async function OrderDetailPage({ params }: PageProps<"/orders/[id]">) {
   const { id } = await params;
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations();
   const session = await requireSession();
 
-  // Phase 4 replaces this with `GET /v1/orders/{id}` through the DAL.
-  const order = id === ORDER_DETAIL.id ? ORDER_DETAIL : null;
-  if (!order) notFound();
+  const [order, drivers] = await Promise.all([loadOrder(id), listDrivers()]);
+  const driver = order.driver_id
+    ? drivers.find((candidate) => candidate.id === order.driver_id)
+    : undefined;
 
   const discrepancy = hasPaymentDiscrepancy(order);
   const editable = order.status === "in_pharmacy";
+
+  /**
+   * Status events carry `changed_by_user_id` and nothing else, so the name is
+   * resolved against the people we already know: the signed-in admin and the
+   * driver roster. A null actor is the order's own creation.
+   */
+  const resolveActor = (userId: string | null): string => {
+    if (!userId) return t("order.timelineCreated");
+
+    if (userId === session.user.id) {
+      return t("order.changedBy", {
+        actor: `${session.user.first_name} ${session.user.last_name}`,
+      });
+    }
+
+    const actor = drivers.find((candidate) => candidate.id === userId);
+    return t("order.changedBy", {
+      actor: actor ? shortName(actor.first_name, actor.last_name) : t("order.system"),
+    });
+  };
 
   // Authoritative: the server owns the state machine, React never re-derives it.
   const actions = order.available_transitions.filter((transition) =>
@@ -130,6 +170,26 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
                 </p>
                 {/* Snapshot on the order — not the client record (PRD 5.3). */}
                 <p className="mt-1">{order.address}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase">
+                  {t("nav.drivers")}
+                </p>
+                <p className="mt-1">
+                  {driver
+                    ? shortName(driver.first_name, driver.last_name)
+                    : t("order.unassigned")}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase">
+                  {t("newDelivery.window")}
+                </p>
+                <p className="mt-1">
+                  {order.delivery_window} · {order.delivery_date}
+                </p>
               </div>
             </div>
 
@@ -229,9 +289,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
                   </p>
                   <p className="font-medium">{t(`status.${event.status}`)}</p>
                   <p className="text-muted-foreground">
-                    {event.changed_by_user_id
-                      ? t("order.changedBy", { actor: t("order.system") })
-                      : t("order.timelineCreated")}
+                    {resolveActor(event.changed_by_user_id)}
                   </p>
                 </div>
               </li>

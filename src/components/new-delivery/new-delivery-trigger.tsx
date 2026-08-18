@@ -6,13 +6,16 @@ import { Plus } from "lucide-react";
 
 import { NewDeliverySheet } from "@/components/new-delivery/new-delivery-sheet";
 import { Button } from "@/components/ui/button";
-// Phase 0 only. Phase 5 passes the client list down from a Server Component so
-// patient data crosses the client boundary once, deliberately, and only the
-// fields the drawer actually renders.
-import { CLIENTS, TODAY } from "@/fixtures";
 import { cn } from "@/lib/utils";
 
-export function NewDeliveryTrigger({ className }: { className?: string }) {
+export function NewDeliveryTrigger({
+  defaultDate,
+  className,
+}: {
+  /** The pharmacy's today, resolved server-side in its own timezone. */
+  defaultDate: string;
+  className?: string;
+}) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
@@ -22,12 +25,10 @@ export function NewDeliveryTrigger({ className }: { className?: string }) {
         <Plus className="size-4" aria-hidden />
         {t("nav.newDelivery")}
       </Button>
-      <NewDeliverySheet
-        open={open}
-        onOpenChange={setOpen}
-        clients={CLIENTS}
-        defaultDate={TODAY}
-      />
+      {/* Mounted only once opened, so nothing is fetched until it is wanted. */}
+      {open && (
+        <NewDeliverySheet open={open} onOpenChange={setOpen} defaultDate={defaultDate} />
+      )}
     </>
   );
 }

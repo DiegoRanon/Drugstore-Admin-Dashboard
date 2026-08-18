@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Check, ChevronsUpDown, PackagePlus, Search, Snowflake } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  LoaderCircle,
+  PackagePlus,
+  Search,
+  Snowflake,
+} from "lucide-react";
 
-import type { Client, DeliveryWindow, PaymentStatus } from "@/api/types";
+import type { DeliveryWindow, PaymentStatus } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -37,33 +44,71 @@ import { cn } from "@/lib/utils";
 
 const SECTION = "text-xs font-semibold tracking-wide text-muted-foreground uppercase";
 
+/** Only what the picker renders. `notes` deliberately stays on the server. */
+type PickerClient = {
+  id: string;
+  name: string;
+  address: string;
+  phone_number: string;
+};
+
 /**
  * Quick-add for the common case: pick a saved patient, confirm the prefill,
- * choose a window, save. `Save and add another` keeps the drawer open for the
- * morning run; `Full form` escalates to the page for a first-time patient.
+ * choose a window, save.
  *
- * Phase 0: fields are presentational. Phase 5 wires this to a Server Action
- * against `POST /v1/orders` and hands the client list in as props from a Server
- * Component, so only the fields the drawer renders cross the boundary.
+ * The patient list is fetched when the drawer opens rather than preloaded, so
+ * patient data does not sit in the HTML payload of every page that shows the
+ * trigger (PRD 3.1).
+ *
+ * Phase 5 wires the two save buttons to a Server Action against
+ * `POST /v1/orders`; the fields below are presentational until then.
  */
 export function NewDeliverySheet({
   open,
   onOpenChange,
-  clients,
   defaultDate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clients: Client[];
   defaultDate: string;
 }) {
   const t = useTranslations();
-  const [clientId, setClientId] = useState<string | null>(null);
+
+  const [clients, setClients] = useState<PickerClient[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<PickerClient | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+
   const [window, setWindow] = useState<DeliveryWindow>("AM");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("unpaid");
 
-  const selected = clients.find((client) => client.id === clientId);
+  // Search server-side: the roster can be long, and the API already indexes
+  // name and phone.
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => {
+        setLoading(true);
+        fetch(`/api/clients/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        })
+          .then((response) => (response.ok ? response.json() : { data: [] }))
+          .then((payload: { data: PickerClient[] }) => setClients(payload.data))
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      },
+      query ? 250 : 0,
+    );
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [open, query]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -98,25 +143,39 @@ export function NewDeliverySheet({
                 </span>
                 <ChevronsUpDown className="size-4 opacity-50" aria-hidden />
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-                <Command>
-                  <CommandInput placeholder={t("newDelivery.patientSearch")} />
+              <PopoverContent
+                align="start"
+                className="w-[var(--radix-popover-trigger-width)] p-0"
+              >
+                {/* Filtering happens on the server, so cmdk must not also filter. */}
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    value={query}
+                    onValueChange={setQuery}
+                    placeholder={t("newDelivery.patientSearch")}
+                  />
                   <CommandList>
-                    <CommandEmpty>{t("newDelivery.patientEmpty")}</CommandEmpty>
+                    {loading && (
+                      <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                        <LoaderCircle className="size-4 animate-spin" aria-hidden />
+                        {t("common.loading")}
+                      </div>
+                    )}
+                    {!loading && <CommandEmpty>{t("newDelivery.patientEmpty")}</CommandEmpty>}
                     <CommandGroup>
                       {clients.map((client) => (
                         <CommandItem
                           key={client.id}
-                          value={`${client.name} ${client.phone_number}`}
+                          value={client.id}
                           onSelect={() => {
-                            setClientId(client.id);
+                            setSelected(client);
                             setPickerOpen(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "size-4",
-                              client.id === clientId ? "opacity-100" : "opacity-0",
+                              client.id === selected?.id ? "opacity-100" : "opacity-0",
                             )}
                           />
                           <span className="flex flex-col">
@@ -146,15 +205,19 @@ export function NewDeliverySheet({
 
             <div className="space-y-1.5">
               <Label htmlFor="qa-name">{t("newDelivery.fullName")}</Label>
-              <Input id="qa-name" defaultValue={selected?.name ?? ""} key={`n-${clientId}`} />
+              <Input
+                id="qa-name"
+                key={`n-${selected?.id ?? "none"}`}
+                defaultValue={selected?.name ?? ""}
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="qa-address">{t("newDelivery.address")}</Label>
               <Input
                 id="qa-address"
+                key={`a-${selected?.id ?? "none"}`}
                 defaultValue={selected?.address ?? ""}
-                key={`a-${clientId}`}
               />
             </div>
 
@@ -164,8 +227,8 @@ export function NewDeliverySheet({
                 id="qa-phone"
                 inputMode="tel"
                 className="font-mono"
+                key={`p-${selected?.id ?? "none"}`}
                 defaultValue={selected?.phone_number ?? ""}
-                key={`p-${clientId}`}
               />
             </div>
           </section>
@@ -248,8 +311,10 @@ export function NewDeliverySheet({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t px-6 py-4">
-          <Button variant="outline">{t("newDelivery.saveAndAddAnother")}</Button>
-          <Button>{t("newDelivery.save")}</Button>
+          <Button variant="outline" disabled>
+            {t("newDelivery.saveAndAddAnother")}
+          </Button>
+          <Button disabled>{t("newDelivery.save")}</Button>
         </div>
       </SheetContent>
     </Sheet>

@@ -10,6 +10,7 @@
   },
   "nav": {
     "deliveries": "Deliveries",
+    "history": "History",
     "patients": "Patients",
     "drivers": "Drivers",
     "codes": "Codes",
@@ -31,7 +32,30 @@
     "empty": "No deliveries that day",
     "emptyHint": "Use “New delivery” to add one.",
     "loadError": "Deliveries could not be loaded.",
-    "retry": "Try again"
+    "loadErrorHint": "The delivery service is temporarily unreachable.",
+    "retry": "Try again",
+    "updatesLive": "Updating automatically",
+    "updatesPaused": "Paused",
+    "updatesError": "Updates interrupted"
+  },
+  "history": {
+    "title": "Delivery history",
+    "subtitle": "Logistical tracking of packages. Sorting is fixed by the server: newest first.",
+    "filters": "Filters",
+    "date": "Date",
+    "status": "Status",
+    "driver": "Driver",
+    "patient": "Patient",
+    "anyStatus": "All statuses",
+    "anyDriver": "All drivers",
+    "anyPatient": "All patients",
+    "clear": "Clear filters",
+    "reference": "Ref.",
+    "window": "Window",
+    "payment": "Payment",
+    "empty": "No deliveries match these filters",
+    "emptyHint": "Widen the date range or clear the filters.",
+    "endOfList": "End of list"
   },
   "exceptions": {
     "title": "Needs attention",

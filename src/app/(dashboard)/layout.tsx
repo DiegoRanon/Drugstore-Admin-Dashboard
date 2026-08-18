@@ -3,6 +3,7 @@ import { IdleTimer } from "@/components/shell/idle-timer";
 import { Sidebar } from "@/components/shell/sidebar";
 import { TopBar } from "@/components/shell/top-bar";
 import { requireSession } from "@/lib/dal/session";
+import { todayIn } from "@/lib/format";
 
 /**
  * Every route under this layout renders patient information, so none of it may
@@ -18,7 +19,10 @@ export default async function DashboardLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar orgName={session.organization.name} />
+      <Sidebar
+        orgName={session.organization.name}
+        today={todayIn(session.organization.timezone)}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           firstName={session.user.first_name}

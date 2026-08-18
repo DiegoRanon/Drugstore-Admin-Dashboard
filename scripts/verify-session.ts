@@ -78,6 +78,37 @@ async function apiLogin(attempt = 0): Promise<LoginResponse> {
   throw error;
 }
 
+/**
+ * The API rate-limits logins per IP. This suite legitimately signs in several
+ * times, so it waits the window out — the limiter is the server working
+ * correctly, not a defect under test.
+ */
+async function withRateLimitRetry(
+  run: () => Promise<Response>,
+  attempts = 2,
+): Promise<Response> {
+  let response = await run();
+
+  for (let attempt = 0; attempt < attempts && response.status === 429; attempt += 1) {
+    console.log("  \x1b[33m…\x1b[0m  rate limited, waiting 62s");
+    await new Promise((r) => setTimeout(r, 62_000));
+    response = await run();
+  }
+
+  return response;
+}
+
+/** Signs in through the dashboard. */
+async function appLogin(): Promise<Response> {
+  return withRateLimitRetry(() =>
+    fetch(`${APP}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: APP },
+      body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
+    }),
+  );
+}
+
 async function rawRefresh(token: string): Promise<Response> {
   return fetch(`${API}/v1/auth/refresh`, {
     method: "POST",
@@ -349,11 +380,18 @@ async function verifyRouteProtection() {
   });
   check("login from another origin is refused", crossOrigin.status === 403);
 
-  const badCreds = await fetch(`${APP}/api/auth/login`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin: APP },
-    body: JSON.stringify({ email: EMAIL, password: "wrong-password" }),
-  });
+  // A throwaway address: failed attempts count against the *email*, so probing
+  // with the admin's own would lock the account the rest of this suite needs.
+  const badCreds = await withRateLimitRetry(() =>
+    fetch(`${APP}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: APP },
+      body: JSON.stringify({
+        email: `verify-probe-${Date.now()}@example.test`,
+        password: "wrong-password",
+      }),
+    }),
+  );
   const badBody = (await badCreds.json()) as { code?: string };
   check(
     "wrong credentials return INVALID_CREDENTIALS",
@@ -361,11 +399,7 @@ async function verifyRouteProtection() {
     `status ${badCreds.status}, code ${badBody.code}`,
   );
 
-  const ok = await fetch(`${APP}/api/auth/login`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin: APP },
-    body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
-  });
+  const ok = await appLogin();
   const setCookie = ok.headers.get("set-cookie") ?? "";
   check("a valid login succeeds", ok.status === 200);
   check(

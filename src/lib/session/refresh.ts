@@ -96,7 +96,9 @@ export async function ensureFreshSession(session: Session): Promise<RefreshOutco
       user,
       // `/v1/auth/refresh` does not re-send the organization; carry it forward.
       organization: session.organization,
-      lastSeenAt: Date.now(),
+      // `lastSeenAt` is deliberately *not* bumped. Refreshing a token says
+      // nothing about whether a human is at the counter, and a board polling
+      // every 10 seconds would otherwise hold the session open forever.
     };
 
     const sealed = await sealSession(next);

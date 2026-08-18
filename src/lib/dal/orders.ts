@@ -45,6 +45,46 @@ export const getOrdersForDate = cache(async (date: string): Promise<Order[]> => 
   return page.data;
 });
 
+const HISTORY_PAGE_SIZE = 50;
+/** Bounds the work behind a "load more" that someone leans on. */
+const HISTORY_MAX_PAGES = 20;
+
+/**
+ * The history view's "load more", server-side.
+ *
+ * Pagination is keyset — `{ data, next_cursor, has_more }`, no page numbers and
+ * no total count — so accumulating means walking the cursors. The page count
+ * lives in the URL and the walk is redone on each request, which keeps every
+ * row rendered on the server instead of shipping order JSON to the browser to
+ * be appended there.
+ *
+ * Cursors stay opaque throughout: never parsed, never constructed.
+ */
+export async function getOrderHistory(
+  filters: OrderFilters,
+  pages: number,
+): Promise<{ orders: Order[]; hasMore: boolean; pageSize: number }> {
+  const wanted = Math.min(Math.max(pages, 1), HISTORY_MAX_PAGES);
+  const orders: Order[] = [];
+  let cursor: string | undefined;
+  let hasMore = false;
+
+  for (let page = 0; page < wanted; page += 1) {
+    const result = await listOrders({ ...filters, limit: HISTORY_PAGE_SIZE }, cursor);
+    orders.push(...result.data);
+
+    if (!result.has_more || !result.next_cursor) {
+      hasMore = false;
+      break;
+    }
+
+    hasMore = true;
+    cursor = result.next_cursor;
+  }
+
+  return { orders, hasMore, pageSize: HISTORY_PAGE_SIZE };
+}
+
 /**
  * Audit-logged on the server: every call writes a row recording who read this
  * patient's information. Never call it speculatively, and never let `<Link>`

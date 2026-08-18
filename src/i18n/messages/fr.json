@@ -10,6 +10,7 @@
   },
   "nav": {
     "deliveries": "Livraisons",
+    "history": "Historique",
     "patients": "Patients",
     "drivers": "Livreurs",
     "codes": "Codes",
@@ -31,7 +32,30 @@
     "empty": "Aucune livraison ce jour-là",
     "emptyHint": "Utilisez « Nouvelle livraison » pour en ajouter une.",
     "loadError": "Impossible de charger les livraisons.",
-    "retry": "Réessayer"
+    "loadErrorHint": "Le service de livraison est momentanément injoignable.",
+    "retry": "Réessayer",
+    "updatesLive": "Mise à jour automatique",
+    "updatesPaused": "En pause",
+    "updatesError": "Mises à jour interrompues"
+  },
+  "history": {
+    "title": "Historique des livraisons",
+    "subtitle": "Suivi logistique des colis. Le tri est fixé par le serveur : les plus récentes d'abord.",
+    "filters": "Filtres",
+    "date": "Date",
+    "status": "Statut",
+    "driver": "Livreur",
+    "patient": "Patient",
+    "anyStatus": "Tous les statuts",
+    "anyDriver": "Tous les livreurs",
+    "anyPatient": "Tous les patients",
+    "clear": "Effacer les filtres",
+    "reference": "Réf.",
+    "window": "Créneau",
+    "payment": "Paiement",
+    "empty": "Aucune livraison ne correspond à ces filtres",
+    "emptyHint": "Élargissez la période ou effacez les filtres.",
+    "endOfList": "Fin de la liste"
   },
   "exceptions": {
     "title": "À vérifier",
