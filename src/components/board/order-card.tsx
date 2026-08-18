@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ChevronDown, Snowflake, User } from "lucide-react";
+import { Snowflake, User } from "lucide-react";
 
 import type { Driver, Order } from "@/api/types";
 import { StatusChip } from "@/components/board/status-chip";
-import { Button } from "@/components/ui/button";
+import {
+  AssignDriverMenu,
+  type AssignableDriver,
+} from "@/components/orders/assign-driver-menu";
 import type { Locale } from "@/i18n/config";
 import { formatMoney, shortName } from "@/lib/format";
 import { isTerminal, shortReference, STATUS_STYLE } from "@/lib/orders";
@@ -13,15 +16,16 @@ import { cn } from "@/lib/utils";
 export async function OrderCard({
   order,
   driver,
+  assignableDrivers,
   locale,
 }: {
   order: Order;
   driver: Driver | undefined;
+  assignableDrivers: AssignableDriver[];
   locale: Locale;
 }) {
   const t = await getTranslations();
   const closed = isTerminal(order.status);
-  const assignable = order.status === "in_pharmacy";
 
   return (
     <article
@@ -69,7 +73,9 @@ export async function OrderCard({
           ) : (
             <span className="text-sm font-semibold text-paid">
               {order.payment_method
-                ? t("payment.paidWith", { method: t(`payment.method.${order.payment_method}`) })
+                ? t("payment.paidWith", {
+                    method: t(`payment.method.${order.payment_method}`),
+                  })
                 : t("payment.paid")}
             </span>
           )}
@@ -91,24 +97,29 @@ export async function OrderCard({
             <span />
           )}
 
-          {driver ? (
+          {/*
+            A closed delivery records who handled it; an open one is still
+            assignable, and assigning is the main action of the morning.
+          */}
+          {closed ? (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <User className="size-3.5" aria-hidden />
-              {order.status === "completed"
-                ? t("order.completedBy", {
-                    driver: shortName(driver.first_name, driver.last_name),
-                  })
-                : t("order.assignedTo", {
-                    driver: shortName(driver.first_name, driver.last_name),
-                  })}
+              {driver
+                ? order.status === "completed"
+                  ? t("order.completedBy", {
+                      driver: shortName(driver.first_name, driver.last_name),
+                    })
+                  : t("order.assignedTo", {
+                      driver: shortName(driver.first_name, driver.last_name),
+                    })
+                : t("order.unassigned")}
             </span>
-          ) : assignable ? (
-            <Button variant="outline" size="sm" className="gap-1.5">
-              {t("order.assign")}
-              <ChevronDown className="size-3.5" aria-hidden />
-            </Button>
           ) : (
-            <span className="text-xs text-muted-foreground">{t("order.unassigned")}</span>
+            <AssignDriverMenu
+              orderId={order.id}
+              currentDriverId={order.driver_id}
+              drivers={assignableDrivers}
+            />
           )}
         </div>
       </div>

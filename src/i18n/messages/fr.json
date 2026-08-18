@@ -19,7 +19,8 @@
     "search": "Rechercher…",
     "newDelivery": "Nouvelle livraison",
     "signOut": "Se déconnecter",
-    "language": "Langue"
+    "language": "Langue",
+    "searchPatients": "Rechercher un patient…"
   },
   "board": {
     "today": "Aujourd'hui",
@@ -99,7 +100,10 @@
     "keep": "Conserver",
     "edit": "Modifier",
     "editDisabled": "Modifiable uniquement tant que la livraison est en pharmacie. Le colis est déjà pris en charge par un livreur.",
-    "breadcrumb": "Détails"
+    "breadcrumb": "Détails",
+    "unassign": "Retirer l'assignation",
+    "saving": "Enregistrement…",
+    "created": "Créée"
   },
   "payment": {
     "paid": "Payé",
@@ -160,7 +164,13 @@
     "deactivateConfirmBody": "{name} n'apparaîtra plus lors de la création d'une livraison. L'historique des livraisons passées est conservé.",
     "update": "Mettre à jour",
     "save": "Sauvegarder",
-    "new": "Nouveau patient"
+    "new": "Nouveau patient",
+    "showInactive": "Afficher les inactifs",
+    "hideInactive": "Masquer les inactifs",
+    "reactivate": "Réactiver",
+    "newTitle": "Nouveau patient",
+    "newSubtitle": "Enregistrez un patient pour pouvoir lui créer des livraisons.",
+    "create": "Enregistrer le patient"
   },
   "drivers": {
     "title": "Livreurs",
@@ -234,6 +244,27 @@
     "title": "Toujours là ?",
     "body": "Par sécurité, votre session se fermera dans deux minutes. Les postes partagés ne doivent pas rester connectés sans surveillance.",
     "stay": "Rester connecté"
+  },
+  "errors": {
+    "VALIDATION_FAILED": "Vérifiez les champs en surbrillance.",
+    "ORDER_INVALID_TRANSITION": "L'état de la livraison a changé entre-temps. Voici son état actuel.",
+    "ORDER_NOT_EDITABLE": "Cette livraison n'est plus modifiable : un livreur a déjà pris le colis en charge.",
+    "CLIENT_INACTIVE": "Ce patient est désactivé. Réactivez-le avant de créer une livraison.",
+    "DRIVER_INACTIVE": "Ce livreur n'est plus actif.",
+    "UNAVAILABLE": "Le service de livraison est injoignable. Réessayez dans un moment.",
+    "UNEXPECTED": "Une erreur inattendue est survenue.",
+    "fallback": "L'opération a échoué ({code})."
+  },
+  "toast": {
+    "orderCreated": "Livraison créée pour {patient}.",
+    "orderUpdated": "Livraison mise à jour.",
+    "orderCancelled": "Livraison annulée.",
+    "driverAssigned": "Assignée à {driver}.",
+    "driverUnassigned": "Assignation retirée.",
+    "clientCreated": "Patient {name} enregistré.",
+    "clientUpdated": "Patient mis à jour.",
+    "clientDeactivated": "Patient désactivé.",
+    "clientReactivated": "Patient réactivé."
   },
   "common": {
     "loading": "Chargement…",

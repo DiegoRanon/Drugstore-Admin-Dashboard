@@ -19,7 +19,8 @@
     "search": "Search…",
     "newDelivery": "New delivery",
     "signOut": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "searchPatients": "Search patients…"
   },
   "board": {
     "today": "Today",
@@ -99,7 +100,10 @@
     "keep": "Keep it",
     "edit": "Edit",
     "editDisabled": "Editable only while the delivery is in the pharmacy. A driver already has the package.",
-    "breadcrumb": "Details"
+    "breadcrumb": "Details",
+    "unassign": "Remove assignment",
+    "saving": "Saving…",
+    "created": "Created"
   },
   "payment": {
     "paid": "Paid",
@@ -160,7 +164,13 @@
     "deactivateConfirmBody": "{name} will no longer appear when creating a delivery. Past delivery history is preserved.",
     "update": "Update",
     "save": "Save",
-    "new": "New patient"
+    "new": "New patient",
+    "showInactive": "Show inactive",
+    "hideInactive": "Hide inactive",
+    "reactivate": "Reactivate",
+    "newTitle": "New patient",
+    "newSubtitle": "Save a patient so deliveries can be created for them.",
+    "create": "Save patient"
   },
   "drivers": {
     "title": "Drivers",
@@ -234,6 +244,27 @@
     "title": "Still there?",
     "body": "For safety, your session will close in two minutes. Shared workstations should not stay signed in unattended.",
     "stay": "Stay signed in"
+  },
+  "errors": {
+    "VALIDATION_FAILED": "Check the highlighted fields.",
+    "ORDER_INVALID_TRANSITION": "The delivery's state changed in the meantime. Here is where it stands now.",
+    "ORDER_NOT_EDITABLE": "This delivery can no longer be edited: a driver already has the package.",
+    "CLIENT_INACTIVE": "This patient is deactivated. Reactivate them before creating a delivery.",
+    "DRIVER_INACTIVE": "This driver is no longer active.",
+    "UNAVAILABLE": "The delivery service is unreachable. Try again in a moment.",
+    "UNEXPECTED": "An unexpected error occurred.",
+    "fallback": "The operation failed ({code})."
+  },
+  "toast": {
+    "orderCreated": "Delivery created for {patient}.",
+    "orderUpdated": "Delivery updated.",
+    "orderCancelled": "Delivery cancelled.",
+    "driverAssigned": "Assigned to {driver}.",
+    "driverUnassigned": "Assignment removed.",
+    "clientCreated": "Patient {name} saved.",
+    "clientUpdated": "Patient updated.",
+    "clientDeactivated": "Patient deactivated.",
+    "clientReactivated": "Patient reactivated."
   },
   "common": {
     "loading": "Loading…",

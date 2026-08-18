@@ -20,13 +20,21 @@
 /** `/orders/<something>` or `/clients/<something>` — not the bare list route. */
 const AUDITED_PREFIX = /^\/(orders|clients)\/(?!$)/;
 
+/**
+ * Static sub-routes that are not detail reads. `/orders/new` renders an empty
+ * form and fetches no patient, so prefetching it is free — and worth having.
+ */
+const STATIC_SUBROUTES = /^\/(orders|clients)\/new(\/.*)?$/;
+
 function isAuditedHref(attribute) {
   const value = attribute.value;
   if (!value) return false;
 
   // href="/orders/abc"
   if (value.type === "Literal") {
-    return typeof value.value === "string" && AUDITED_PREFIX.test(value.value);
+    if (typeof value.value !== "string") return false;
+    if (STATIC_SUBROUTES.test(value.value)) return false;
+    return AUDITED_PREFIX.test(value.value);
   }
 
   if (value.type !== "JSXExpressionContainer") return false;

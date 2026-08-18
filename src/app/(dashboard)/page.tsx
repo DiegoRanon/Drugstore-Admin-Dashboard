@@ -11,7 +11,7 @@ import type { Locale } from "@/i18n/config";
 import { listDrivers } from "@/lib/dal/drivers";
 import { getOrdersForDate } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
-import { todayIn } from "@/lib/format";
+import { shortName, todayIn } from "@/lib/format";
 import { groupByWindow, indexDrivers } from "@/lib/orders";
 
 /** Renders patient data: never prerendered, never cached (PRD 8.2). */
@@ -80,12 +80,32 @@ async function BoardContent({
   const { AM, PM } = groupByWindow(orders);
   const driverIndex = indexDrivers(drivers);
 
+  // Only employed drivers can be assigned work (PRD 5.3).
+  const assignableDrivers = drivers
+    .filter((driver) => driver.is_active)
+    .map((driver) => ({
+      id: driver.id,
+      name: shortName(driver.first_name, driver.last_name),
+    }));
+
   return (
     <>
       <ExceptionBand orders={orders} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <BoardColumn window="AM" orders={AM} drivers={driverIndex} locale={locale} />
-        <BoardColumn window="PM" orders={PM} drivers={driverIndex} locale={locale} />
+        <BoardColumn
+          window="AM"
+          orders={AM}
+          drivers={driverIndex}
+          assignableDrivers={assignableDrivers}
+          locale={locale}
+        />
+        <BoardColumn
+          window="PM"
+          orders={PM}
+          drivers={driverIndex}
+          assignableDrivers={assignableDrivers}
+          locale={locale}
+        />
       </div>
     </>
   );

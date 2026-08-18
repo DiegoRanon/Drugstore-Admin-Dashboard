@@ -12,6 +12,8 @@ import {
 
 import type { OrderTransition } from "@/api/types";
 import { StatusChip } from "@/components/board/status-chip";
+import { AssignDriverMenu } from "@/components/orders/assign-driver-menu";
+import { CancelOrderButton } from "@/components/orders/cancel-order-button";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -64,6 +66,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
   const driver = order.driver_id
     ? drivers.find((candidate) => candidate.id === order.driver_id)
     : undefined;
+
+  // Only employed drivers can be assigned work (PRD 5.3).
+  const assignableDrivers = drivers
+    .filter((candidate) => candidate.is_active)
+    .map((candidate) => ({
+      id: candidate.id,
+      name: shortName(candidate.first_name, candidate.last_name),
+    }));
 
   const discrepancy = hasPaymentDiscrepancy(order);
   const editable = order.status === "in_pharmacy";
@@ -125,18 +135,30 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
             matches the record of it, so the control explains itself rather than
             letting the user submit and collect a 422 (PRD 5.3).
           */}
-          <Button variant="outline" disabled={!editable} title={editable ? undefined : t("order.editDisabled")}>
-            {t("order.edit")}
-          </Button>
-          {actions.includes("cancel") && (
+          {editable ? (
             <Button
               variant="outline"
-              className="border-destructive/40 text-destructive hover:bg-destructive/5"
+              render={<Link href={`/orders/${order.id}/edit`} prefetch={false} />}
             >
-              {t("order.cancel")}
+              {t("order.edit")}
+            </Button>
+          ) : (
+            <Button variant="outline" disabled title={t("order.editDisabled")}>
+              {t("order.edit")}
             </Button>
           )}
-          {!isTerminal(order.status) && <Button>{t("order.assignDriver")}</Button>}
+
+          {/* Rendered from `available_transitions`; never re-derived here. */}
+          {actions.includes("cancel") && <CancelOrderButton orderId={order.id} />}
+
+          {!isTerminal(order.status) && (
+            <AssignDriverMenu
+              orderId={order.id}
+              currentDriverId={order.driver_id}
+              drivers={assignableDrivers}
+              size="default"
+            />
+          )}
         </div>
       </div>
 

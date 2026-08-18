@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import type { DeliveryWindow, Order } from "@/api/types";
 import { OrderCard } from "@/components/board/order-card";
+import type { AssignableDriver } from "@/components/orders/assign-driver-menu";
 import type { Locale } from "@/i18n/config";
 import { DELIVERY_WINDOWS } from "@/lib/delivery-windows";
 import { formatClockTime } from "@/lib/format";
@@ -11,11 +12,13 @@ export async function BoardColumn({
   window,
   orders,
   drivers,
+  assignableDrivers,
   locale,
 }: {
   window: DeliveryWindow;
   orders: Order[];
   drivers: DriverIndex;
+  assignableDrivers: AssignableDriver[];
   locale: Locale;
 }) {
   const t = await getTranslations();
@@ -56,6 +59,7 @@ export async function BoardColumn({
               key={order.id}
               order={order}
               driver={order.driver_id ? drivers.get(order.driver_id) : undefined}
+              assignableDrivers={assignableDrivers}
               locale={locale}
             />
           ))}

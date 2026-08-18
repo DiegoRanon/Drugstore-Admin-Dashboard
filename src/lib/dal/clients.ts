@@ -33,6 +33,51 @@ export const getClient = cache(async (id: string): Promise<Client> => {
   return apiFetch<Client>(`/v1/clients/${id}`, { token });
 });
 
+const DIRECTORY_PAGE_SIZE = 25;
+const DIRECTORY_MAX_PAGES = 20;
+
+/**
+ * The patient directory, accumulated across keyset pages.
+ *
+ * The list endpoint already returns `notes` and `compliance_reminder`, so the
+ * management screen needs no per-patient detail call — which matters: `GET
+ * /v1/clients/{id}` is audit-logged, and selecting rows in a list should not
+ * write one accountability row per click (PRD 8.1). One `client.list.read` for
+ * the page is honest; twenty `client.detail.read` rows for browsing are not.
+ */
+export async function getClientDirectory(
+  options: { search?: string; includeInactive?: boolean },
+  pages: number,
+): Promise<{ clients: Client[]; hasMore: boolean }> {
+  const wanted = Math.min(Math.max(pages, 1), DIRECTORY_MAX_PAGES);
+  const clients: Client[] = [];
+  let cursor: string | undefined;
+  let hasMore = false;
+
+  for (let page = 0; page < wanted; page += 1) {
+    const result = await listClients(
+      {
+        search: options.search,
+        is_active: options.includeInactive ? undefined : "true",
+        limit: DIRECTORY_PAGE_SIZE,
+      },
+      cursor,
+    );
+
+    clients.push(...result.data);
+
+    if (!result.has_more || !result.next_cursor) {
+      hasMore = false;
+      break;
+    }
+
+    hasMore = true;
+    cursor = result.next_cursor;
+  }
+
+  return { clients, hasMore };
+}
+
 export async function createClient(body: CreateClientBody): Promise<Client> {
   const token = await requireAccessToken();
   return apiFetch<Client>("/v1/clients/", { method: "POST", token, body });
