@@ -73,10 +73,20 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
 
   const hasFilters = Boolean(date) || status !== ANY || driverId !== ANY || clientId;
 
+  // Base UI Select shows the raw value unless `items` maps values → labels.
+  const statusItems: Record<string, string> = {
+    [ANY]: t("history.anyStatus"),
+    ...Object.fromEntries(STATUSES.map((value) => [value, t(`status.${value}`)])),
+  };
+  const driverItems: Record<string, string> = {
+    [ANY]: t("history.anyDriver"),
+    ...Object.fromEntries(drivers.map((driver) => [driver.id, driver.name])),
+  };
+
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card px-4 py-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="filter-date" className="text-xs">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border bg-card px-4 py-3">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="filter-date" className="shrink-0 text-xs">
           {t("history.date")}
         </Label>
         <Input
@@ -88,35 +98,43 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="filter-status" className="text-xs">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="filter-status" className="shrink-0 text-xs">
           {t("history.status")}
         </Label>
-        <Select value={status} onValueChange={(value) => apply({ status: value })}>
+        <Select
+          value={status}
+          onValueChange={(value) => apply({ status: value })}
+          items={statusItems}
+        >
           <SelectTrigger id="filter-status" className="w-[12rem]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>{t("history.anyStatus")}</SelectItem>
+            <SelectItem value={ANY}>{statusItems[ANY]}</SelectItem>
             {STATUSES.map((value) => (
               <SelectItem key={value} value={value}>
-                {t(`status.${value}`)}
+                {statusItems[value]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="filter-driver" className="text-xs">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="filter-driver" className="shrink-0 text-xs">
           {t("history.driver")}
         </Label>
-        <Select value={driverId} onValueChange={(value) => apply({ driver_id: value })}>
+        <Select
+          value={driverId}
+          onValueChange={(value) => apply({ driver_id: value })}
+          items={driverItems}
+        >
           <SelectTrigger id="filter-driver" className="w-[12rem]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>{t("history.anyDriver")}</SelectItem>
+            <SelectItem value={ANY}>{driverItems[ANY]}</SelectItem>
             {drivers.map((driver) => (
               <SelectItem key={driver.id} value={driver.id}>
                 {driver.name}
@@ -191,8 +209,8 @@ function PatientFilter({
   const selected = options.find((option) => option.id === selectedId);
 
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{t("history.patient")}</Label>
+    <div className="flex items-center gap-2">
+      <Label className="shrink-0 text-xs">{t("history.patient")}</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
