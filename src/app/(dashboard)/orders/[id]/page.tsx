@@ -21,8 +21,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ORDER_DETAIL, ORG } from "@/fixtures";
+import { ORDER_DETAIL } from "@/fixtures";
 import type { Locale } from "@/i18n/config";
+import { requireSession } from "@/lib/dal/session";
 import { formatMoney, formatTimestamp } from "@/lib/format";
 import { hasPaymentDiscrepancy, isTerminal, shortReference } from "@/lib/orders";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
   const { id } = await params;
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations();
+  const session = await requireSession();
 
   // Phase 4 replaces this with `GET /v1/orders/{id}` through the DAL.
   const order = id === ORDER_DETAIL.id ? ORDER_DETAIL : null;
@@ -219,7 +221,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
                 </span>
                 <div className="text-sm">
                   <p className={cn("font-medium", index === 0 && "text-primary")}>
-                    {formatTimestamp(event.occurred_at, locale, ORG.timezone)}
+                    {formatTimestamp(
+                      event.occurred_at,
+                      locale,
+                      session.organization.timezone,
+                    )}
                   </p>
                   <p className="font-medium">{t(`status.${event.status}`)}</p>
                   <p className="text-muted-foreground">

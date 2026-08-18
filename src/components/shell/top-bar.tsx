@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { LogOut, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { LocaleToggle } from "@/components/shell/locale-toggle";
+import { SignOutButton } from "@/components/shell/sign-out-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +44,7 @@ export async function TopBar({
             {firstName} {lastName}
           </span>
         </Button>
-        <Button variant="ghost" size="icon" aria-label={t("nav.signOut")}>
-          <LogOut className="size-4" />
-        </Button>
+        <SignOutButton />
       </div>
     </header>
   );

@@ -201,8 +201,15 @@
     "accountDisabled": "This account has been deactivated. Contact your administrator.",
     "throttled": "Too many attempts. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
     "genericError": "Unable to sign in right now. Please try again.",
+    "idleNotice": "You were signed out after 30 minutes of inactivity.",
+    "expiredNotice": "Your session expired. Please sign in again.",
     "driverTitle": "Use the mobile app",
     "driverBody": "This dashboard is for pharmacy administrators. Drivers use the mobile app."
+  },
+  "idle": {
+    "title": "Still there?",
+    "body": "For safety, your session will close in two minutes. Shared workstations should not stay signed in unattended.",
+    "stay": "Stay signed in"
   },
   "common": {
     "loading": "Loading…",

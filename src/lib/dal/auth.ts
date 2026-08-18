@@ -46,15 +46,24 @@ export async function logout(refreshToken: string): Promise<void> {
   });
 }
 
-export const getCurrentUser = cache(
-  async (): Promise<{
-    user: SessionUser & { phone: string | null };
-    organization: Organization;
-  }> => {
-    const token = await requireAccessToken();
-    return apiFetch("/v1/auth/me", { token });
-  },
-);
+export type CurrentUser = {
+  user: SessionUser & { phone: string | null };
+  organization: Organization;
+};
+
+export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
+  const token = await requireAccessToken();
+  return apiFetch<CurrentUser>("/v1/auth/me", { token });
+});
+
+/**
+ * Same call, for a token that is not in a cookie yet — login has to resolve the
+ * organization (name, timezone, locale) before it can seal the session, since
+ * `/v1/auth/login` returns only `organization_id`.
+ */
+export async function fetchCurrentUserWithToken(token: string): Promise<CurrentUser> {
+  return apiFetch<CurrentUser>("/v1/auth/me", { token });
+}
 
 /** Revokes every session, including the current one. Warn before calling. */
 export async function changePassword(

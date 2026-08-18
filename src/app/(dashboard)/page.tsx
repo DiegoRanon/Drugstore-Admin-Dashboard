@@ -4,8 +4,9 @@ import { BoardColumn } from "@/components/board/board-column";
 import { DateStepper } from "@/components/board/date-stepper";
 import { ExceptionBand } from "@/components/board/exception-band";
 import { NewDeliveryTrigger } from "@/components/new-delivery/new-delivery-trigger";
-import { ORG, ORG_WINDOWS, ordersForDate, TODAY } from "@/fixtures";
+import { ORG_WINDOWS, ordersForDate, TODAY } from "@/fixtures";
 import type { Locale } from "@/i18n/config";
+import { requireSession } from "@/lib/dal/session";
 import { todayIn } from "@/lib/format";
 import { groupByWindow } from "@/lib/orders";
 
@@ -15,8 +16,10 @@ export default async function BoardPage({ searchParams }: PageProps<"/">) {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations();
   const { date } = await searchParams;
+  const session = await requireSession();
 
-  const today = todayIn(ORG.timezone);
+  // "Today" is the pharmacy's own day, not the server's or the browser's.
+  const today = todayIn(session.organization.timezone);
   const selected = typeof date === "string" && PLAIN_DATE.test(date) ? date : today;
 
   // Phase 3 replaces this with `GET /v1/orders?date=` through the DAL.

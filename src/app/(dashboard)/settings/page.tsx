@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ADMIN } from "@/fixtures";
+import { requireSession } from "@/lib/dal/session";
 
 export default async function SettingsPage() {
   const t = await getTranslations();
+  const { user } = await requireSession();
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -21,12 +22,12 @@ export default async function SettingsPage() {
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted-foreground">{t("login.email")}</dt>
-            <dd className="font-medium">{ADMIN.email}</dd>
+            <dd className="font-medium">{user.email}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{t("drivers.name")}</dt>
             <dd className="font-medium">
-              {ADMIN.first_name} {ADMIN.last_name}
+              {user.first_name} {user.last_name}
             </dd>
           </div>
         </dl>

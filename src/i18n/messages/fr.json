@@ -201,8 +201,15 @@
     "accountDisabled": "Ce compte a été désactivé. Communiquez avec votre administrateur.",
     "throttled": "Trop de tentatives. Réessayez dans {minutes, plural, one {# minute} other {# minutes}}.",
     "genericError": "Connexion impossible pour le moment. Réessayez.",
+    "idleNotice": "Vous avez été déconnecté après 30 minutes d'inactivité.",
+    "expiredNotice": "Votre session a expiré. Reconnectez-vous.",
     "driverTitle": "Utilisez l'application mobile",
     "driverBody": "Ce tableau de bord est réservé aux administrateurs de pharmacie. Les livreurs utilisent l'application mobile."
+  },
+  "idle": {
+    "title": "Toujours là ?",
+    "body": "Par sécurité, votre session se fermera dans deux minutes. Les postes partagés ne doivent pas rester connectés sans surveillance.",
+    "stay": "Rester connecté"
   },
   "common": {
     "loading": "Chargement…",
