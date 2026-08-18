@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Tooling configs, not application code.
+    ".trunk/**",
+    // Generated from the server's openapi.json — never edited by hand.
+    "src/api/schema.d.ts",
   ]),
 ]);
 
