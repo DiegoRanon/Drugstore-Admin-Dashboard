@@ -3,9 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, Flag, X } from "lucide-react";
 
-import type { OrderStatus } from "@/api/types";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -25,15 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ORDER_STATUSES } from "@/lib/orders";
 import { cn } from "@/lib/utils";
-
-const STATUSES: OrderStatus[] = [
-  "in_pharmacy",
-  "picked_up",
-  "completed",
-  "returned",
-  "cancelled",
-];
 
 const ANY = "any";
 
@@ -55,6 +47,8 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
   const status = params.get("status") ?? ANY;
   const driverId = params.get("driver_id") ?? ANY;
   const clientId = params.get("client_id");
+  // The API takes the string enum "true"/"false", not a boolean.
+  const priority = params.get("is_priority") === "true";
 
   const apply = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -71,12 +65,13 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
     startTransition(() => router.push(query ? `/orders?${query}` : "/orders"));
   };
 
-  const hasFilters = Boolean(date) || status !== ANY || driverId !== ANY || clientId;
+  const hasFilters =
+    Boolean(date) || status !== ANY || driverId !== ANY || Boolean(clientId) || priority;
 
   // Base UI Select shows the raw value unless `items` maps values → labels.
   const statusItems: Record<string, string> = {
     [ANY]: t("history.anyStatus"),
-    ...Object.fromEntries(STATUSES.map((value) => [value, t(`status.${value}`)])),
+    ...Object.fromEntries(ORDER_STATUSES.map((value) => [value, t(`status.${value}`)])),
   };
   const driverItems: Record<string, string> = {
     [ANY]: t("history.anyDriver"),
@@ -112,7 +107,7 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>{statusItems[ANY]}</SelectItem>
-            {STATUSES.map((value) => (
+            {ORDER_STATUSES.map((value) => (
               <SelectItem key={value} value={value}>
                 {statusItems[value]}
               </SelectItem>
@@ -149,13 +144,30 @@ export function OrdersFilters({ drivers }: { drivers: DriverOption[] }) {
         onSelect={(id) => apply({ client_id: id })}
       />
 
+      <Button
+        variant={priority ? "secondary" : "outline"}
+        size="sm"
+        aria-pressed={priority}
+        className="gap-1.5"
+        onClick={() => apply({ is_priority: priority ? null : "true" })}
+      >
+        <Flag className="size-3.5" aria-hidden />
+        {t("history.priorityOnly")}
+      </Button>
+
       {hasFilters && (
         <Button
           variant="ghost"
           size="sm"
           className="gap-1.5"
           onClick={() =>
-            apply({ date: null, status: null, driver_id: null, client_id: null })
+            apply({
+              date: null,
+              status: null,
+              driver_id: null,
+              client_id: null,
+              is_priority: null,
+            })
           }
         >
           <X className="size-3.5" aria-hidden />

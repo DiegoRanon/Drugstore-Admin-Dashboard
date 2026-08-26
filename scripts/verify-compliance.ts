@@ -258,6 +258,34 @@ async function main() {
       `${auditCount("order.detail.read", boardFrom)} rows for ${cards} cards`,
     );
 
+    // --- The calendar --------------------------------------------------------
+    console.log("\nThe calendar");
+
+    /*
+      `GET /v1/orders/calendar` returns integers per day and is deliberately
+      excluded from `auditPiiRead` — recording it would bury the real accesses
+      every time someone pages a month. And the day cells link to the board,
+      whose list read *is* audited, so they must not prefetch: a month of cells
+      would otherwise forge thirty list reads nobody performed.
+    */
+    const calendarFrom = dbNow();
+    await page.goto(`${APP}/calendar?month=2026-08-01`, { waitUntil: "networkidle" });
+    const dayCells = await page.locator('a[href^="/?date="]').count();
+    await page.goto(`${APP}/calendar?month=2026-09-01`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(2_500);
+
+    check("the calendar rendered its day cells", dayCells >= 5, `${dayCells} cells`);
+    check(
+      "paging the calendar records zero list reads",
+      auditCount("order.list.read", calendarFrom) === 0,
+      `${auditCount("order.list.read", calendarFrom)} rows for ${dayCells} day cells`,
+    );
+    check(
+      "paging the calendar records zero detail reads",
+      auditCount("order.detail.read", calendarFrom) === 0,
+      `${auditCount("order.detail.read", calendarFrom)} rows`,
+    );
+
     await browser.close();
   } finally {
     server?.kill();

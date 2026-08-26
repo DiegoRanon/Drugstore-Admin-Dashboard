@@ -21,6 +21,8 @@ import {
   cancelOrder,
   createOrder,
   getOrder,
+  markOrderReady,
+  setOrderPriority,
   updateOrder,
 } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
@@ -38,6 +40,7 @@ import { requireSession } from "@/lib/dal/session";
 function revalidateOrderViews(id?: string) {
   revalidatePath("/");
   revalidatePath("/orders");
+  revalidatePath("/calendar");
   if (id) revalidatePath(`/orders/${id}`);
 }
 
@@ -139,3 +142,93 @@ export async function cancelOrderAction(
   }
 }
 
+/**
+ * The step that releases an order to a driver: `scheduled` -> `in_pharmacy`.
+ *
+ * Deliberately **not** optimistic, for the same reason as `cancelOrderAction`:
+ * another admin may have cancelled the order while this page sat open, and
+ * guessing would tell staff a package is on the counter when it is not.
+ */
+export async function markReadyAction(
+  orderId: string,
+): Promise<ActionResult<{ status: Order["status"] }>> {
+  await requireSession();
+
+  try {
+    const order = await markOrderReady(orderId);
+    revalidateOrderViews(orderId);
+    return succeed({ status: order.status });
+  } catch (error) {
+    const failure = toFailure(error);
+
+    // Tell the user what the order actually is now, not just that it failed.
+    if (failure.code === "ORDER_INVALID_TRANSITION") {
+      revalidateOrderViews(orderId);
+      try {
+        const fresh = await getOrder(orderId);
+        return { ...failure, fieldErrors: { status: [fresh.status] } };
+      } catch {
+        return failure;
+      }
+    }
+
+    return failure;
+  }
+}
+
+/**
+ * The morning batch: staff pack a counter full of bags and declare them ready
+ * together.
+ *
+ * There is no bulk endpoint, so this is N sequential calls. Partial failure is
+ * reported rather than swallowed — some of the batch reaching the drivers and
+ * some not is exactly the situation staff must be told about. Sequential
+ * rather than parallel because the API allows 100 requests per minute per
+ * user and a large morning is the one place that could bite.
+ */
+const MAX_BULK_READY = 50;
+
+export async function markAllReadyAction(
+  orderIds: string[],
+): Promise<ActionResult<{ succeeded: number; failed: { id: string; code: string }[] }>> {
+  await requireSession();
+
+  if (orderIds.length === 0 || orderIds.length > MAX_BULK_READY) {
+    return invalid({ form: ["invalid_batch"] });
+  }
+
+  let succeeded = 0;
+  const failed: { id: string; code: string }[] = [];
+
+  for (const id of orderIds) {
+    try {
+      await markOrderReady(id);
+      succeeded += 1;
+    } catch (error) {
+      failed.push({ id, code: toFailure(error).code });
+    }
+  }
+
+  revalidateOrderViews();
+  return succeed({ succeeded, failed });
+}
+
+/**
+ * Priority is optimistic like assignment: the server refuses only on a
+ * terminal order (`409 ORDER_ALREADY_TERMINAL`), and the UI does not offer the
+ * control there.
+ */
+export async function setPriorityAction(
+  orderId: string,
+  isPriority: boolean,
+): Promise<ActionResult<{ isPriority: boolean }>> {
+  await requireSession();
+
+  try {
+    const order = await setOrderPriority(orderId, isPriority);
+    revalidateOrderViews(orderId);
+    return succeed({ isPriority: order.is_priority });
+  } catch (error) {
+    return toFailure(error);
+  }
+}

@@ -105,3 +105,54 @@ export function shortName(first: string, last: string): string {
 export function initials(first: string, last: string): string {
   return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 }
+
+/**
+ * Month arithmetic, on the same plain-date footing as everything above: the
+ * calendar grid must show the pharmacy's days, not the viewer's.
+ */
+export function startOfMonth(date: PlainDate): PlainDate {
+  const [year, month] = partsOf(date);
+  return fromUtc(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+export function endOfMonth(date: PlainDate): PlainDate {
+  const [year, month] = partsOf(date);
+  // Day 0 of the following month is the last day of this one.
+  return fromUtc(new Date(Date.UTC(year, month, 0)));
+}
+
+export function shiftMonth(date: PlainDate, months: number): PlainDate {
+  const [year, month] = partsOf(date);
+  return fromUtc(new Date(Date.UTC(year, month - 1 + months, 1)));
+}
+
+/** `"2026-09-01"` → `"septembre 2026"` / `"September 2026"`. */
+export function formatMonth(date: PlainDate, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(toUtc(date));
+}
+
+/** 0 = Sunday … 6 = Saturday. Canada lays its calendars out Sunday-first. */
+export function weekdayOf(date: PlainDate): number {
+  return toUtc(date).getUTCDay();
+}
+
+/** The day-of-month digits, without re-parsing the string at the call site. */
+export function dayOfMonth(date: PlainDate): number {
+  return partsOf(date)[2];
+}
+
+/** Short weekday headers for a Sunday-first grid, in the viewer's locale. */
+export function weekdayNames(locale: Locale): string[] {
+  const format = new Intl.DateTimeFormat(intlLocale(locale), {
+    weekday: "short",
+    timeZone: "UTC",
+  });
+  // 2024-01-07 was a Sunday.
+  return Array.from({ length: 7 }, (_, index) =>
+    format.format(new Date(Date.UTC(2024, 0, 7 + index))),
+  );
+}

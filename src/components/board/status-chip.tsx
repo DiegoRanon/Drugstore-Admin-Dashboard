@@ -1,7 +1,9 @@
 import {
+  CalendarClock,
   Circle,
   CircleCheck,
   CircleSlash,
+  PackageCheck,
   Truck,
   Undo2,
   type LucideIcon,
@@ -13,10 +15,12 @@ import { STATUS_STYLE } from "@/lib/orders";
 import { cn } from "@/lib/utils";
 
 const STATUS_ICON: Record<OrderStatus, LucideIcon> = {
+  scheduled: CalendarClock,
   in_pharmacy: Circle,
   picked_up: Truck,
   completed: CircleCheck,
   returned: Undo2,
+  returned_to_pharmacy: PackageCheck,
   cancelled: CircleSlash,
 };
 

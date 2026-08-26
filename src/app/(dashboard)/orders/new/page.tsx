@@ -12,8 +12,9 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { listDrivers } from "@/lib/dal/drivers";
 import { requireSession } from "@/lib/dal/session";
-import { todayIn } from "@/lib/format";
+import { shortName, todayIn } from "@/lib/format";
 
 /** Renders patient data: never prerendered, never cached (PRD 8.2). */
 export const dynamic = "force-dynamic";
@@ -21,6 +22,15 @@ export const dynamic = "force-dynamic";
 export default async function NewOrderPage() {
   const t = await getTranslations();
   const session = await requireSession();
+
+  // Only employed drivers can be assigned work (PRD 5.3).
+  const drivers = await listDrivers();
+  const assignableDrivers = drivers
+    .filter((driver) => driver.is_active)
+    .map((driver) => ({
+      id: driver.id,
+      name: shortName(driver.first_name, driver.last_name),
+    }));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -51,6 +61,7 @@ export default async function NewOrderPage() {
       <div className="rounded-lg border bg-card">
         <OrderForm
           mode="create"
+          drivers={assignableDrivers}
           defaults={{ deliveryDate: todayIn(session.organization.timezone) }}
         />
       </div>

@@ -1,13 +1,19 @@
 import { getTranslations } from "next-intl/server";
 
+import { DriverRowActions } from "@/components/drivers/driver-row-actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DRIVERS } from "@/fixtures";
+import { listDrivers } from "@/lib/dal/drivers";
+import { requireSession } from "@/lib/dal/session";
+
+/** Reads the roster behind the session: never prerendered, never cached. */
+export const dynamic = "force-dynamic";
 
 export default async function DriversPage() {
   const t = await getTranslations();
-  // Phase 7 replaces this with `GET /v1/drivers` through the DAL.
-  const drivers = DRIVERS;
+  await requireSession();
+
+  // Small and rarely changed, so it is fetched whole and deduped per request.
+  const drivers = await listDrivers();
 
   return (
     <div className="flex flex-col gap-5">
@@ -53,14 +59,11 @@ export default async function DriversPage() {
                   </Badge>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  {/*
-                    Deactivation revokes the driver's sessions immediately, so
-                    Phase 7's confirmation has to say so in plain words before
-                    this button does anything (PRD 5.5).
-                  */}
-                  <Button variant="outline" size="sm">
-                    {driver.is_active ? t("drivers.deactivate") : t("drivers.activate")}
-                  </Button>
+                  <DriverRowActions
+                    driverId={driver.id}
+                    firstName={driver.first_name}
+                    isActive={driver.is_active}
+                  />
                 </td>
               </tr>
             ))}

@@ -1,11 +1,15 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Plus, Printer } from "lucide-react";
 
+import { InviteActions } from "@/components/invites/invite-actions";
+import { InviteToolbar } from "@/components/invites/invite-toolbar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { INVITES } from "@/fixtures";
 import type { Locale } from "@/i18n/config";
+import { listInvites } from "@/lib/dal/invites";
+import { requireSession } from "@/lib/dal/session";
 import { intlLocale } from "@/lib/format";
+
+/** Behind the session, so never prerendered and never cached. */
+export const dynamic = "force-dynamic";
 
 /** Printed on a sheet and typed by hand, so it reads in two groups of four. */
 function grouped(code: string): string {
@@ -15,7 +19,9 @@ function grouped(code: string): string {
 export default async function InvitesPage() {
   const t = await getTranslations();
   const locale = (await getLocale()) as Locale;
-  const invites = INVITES;
+  await requireSession();
+
+  const invites = await listInvites();
 
   const date = new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium" });
 
@@ -26,17 +32,15 @@ export default async function InvitesPage() {
           <h1 className="text-2xl font-bold">{t("invites.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("invites.subtitle")}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 no-print">
-            <Printer className="size-4" aria-hidden />
-            {t("invites.print")}
-          </Button>
-          <Button className="gap-2">
-            <Plus className="size-4" aria-hidden />
-            {t("invites.generate")}
-          </Button>
-        </div>
+        <InviteToolbar />
       </div>
+
+      {invites.length === 0 && (
+        <div className="rounded-lg border bg-card px-6 py-12 text-center">
+          <p className="font-medium">{t("invites.empty")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("invites.emptyHint")}</p>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {invites.map((invite) => {
@@ -66,20 +70,17 @@ export default async function InvitesPage() {
                   : t("invites.neverExpires")}
               </p>
 
+              {/*
+                A redeemed code cannot be revoked, and revoking would not remove
+                the driver it created — so the control is hidden rather than
+                shown and left to fail (PRD 5.6).
+              */}
               <div className="mt-4 flex gap-2 no-print">
-                <Button variant="outline" size="sm">
-                  {t("invites.copy")}
-                </Button>
-                {/*
-                  A redeemed code cannot be revoked (409), and revoking would not
-                  remove the driver it created — Phase 7 points the admin at the
-                  roster instead of showing a button that always fails.
-                */}
-                {!redeemed && invite.is_active && (
-                  <Button variant="outline" size="sm">
-                    {t("invites.revoke")}
-                  </Button>
-                )}
+                <InviteActions
+                  inviteId={invite.id}
+                  code={invite.code}
+                  canRevoke={!redeemed && invite.is_active}
+                />
               </div>
             </article>
           );

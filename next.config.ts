@@ -9,6 +9,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
  */
 const PII_ROUTES = [
   "/",
+  // Counts only, no patient data — but still private authenticated content,
+  // and misclassifying downward is the risky direction.
+  "/calendar",
   "/orders/:path*",
   "/clients/:path*",
   "/drivers/:path*",

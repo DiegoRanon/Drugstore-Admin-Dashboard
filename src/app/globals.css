@@ -40,6 +40,8 @@
    * use pairs these with a label and an icon (PRD 7) — but the hue has to stay
    * consistent everywhere a status appears: stripe, chip, timeline, filter.
    */
+  --color-status-scheduled: var(--status-scheduled);
+  --color-status-scheduled-soft: var(--status-scheduled-soft);
   --color-status-in-pharmacy: var(--status-in-pharmacy);
   --color-status-in-pharmacy-soft: var(--status-in-pharmacy-soft);
   --color-status-picked-up: var(--status-picked-up);
@@ -48,6 +50,8 @@
   --color-status-completed-soft: var(--status-completed-soft);
   --color-status-returned: var(--status-returned);
   --color-status-returned-soft: var(--status-returned-soft);
+  --color-status-returned-to-pharmacy: var(--status-returned-to-pharmacy);
+  --color-status-returned-to-pharmacy-soft: var(--status-returned-to-pharmacy-soft);
   --color-status-cancelled: var(--status-cancelled);
   --color-status-cancelled-soft: var(--status-cancelled-soft);
 
@@ -97,6 +101,9 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.546 0.245 262.881);
 
+  /* Not packed yet: a muted violet, clear of the blue of in_pharmacy and the slate of cancelled. */
+  --status-scheduled: oklch(0.548 0.176 302.5);
+  --status-scheduled-soft: oklch(0.969 0.021 302.5);
   --status-in-pharmacy: oklch(0.546 0.245 262.881);
   --status-in-pharmacy-soft: oklch(0.97 0.014 254.604);
   --status-picked-up: oklch(0.666 0.179 58.318);
@@ -105,6 +112,9 @@
   --status-completed-soft: oklch(0.962 0.044 156.743);
   --status-returned: oklch(0.577 0.245 27.325);
   --status-returned-soft: oklch(0.971 0.013 17.38);
+  /* Back on the shelf: a settled, desaturated cousin of the red of returned. */
+  --status-returned-to-pharmacy: oklch(0.502 0.088 25.5);
+  --status-returned-to-pharmacy-soft: oklch(0.964 0.014 25.5);
   --status-cancelled: oklch(0.554 0.046 257.417);
   --status-cancelled-soft: oklch(0.968 0.007 247.896);
 

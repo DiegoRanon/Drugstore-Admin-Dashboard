@@ -20,7 +20,8 @@
     "newDelivery": "Nouvelle livraison",
     "signOut": "Se déconnecter",
     "language": "Langue",
-    "searchPatients": "Rechercher un patient…"
+    "searchPatients": "Rechercher un patient…",
+    "calendar": "Calendrier"
   },
   "board": {
     "today": "Aujourd'hui",
@@ -37,7 +38,11 @@
     "retry": "Réessayer",
     "updatesLive": "Mise à jour automatique",
     "updatesPaused": "En pause",
-    "updatesError": "Mises à jour interrompues"
+    "updatesError": "Mises à jour interrompues",
+    "toPrepare": "{count, plural, one {# commande à préparer} other {# commandes à préparer}}",
+    "markAllReady": "Tout marquer prêt",
+    "markAllReadyConfirmTitle": "Marquer {count, plural, one {# commande} other {# commandes}} comme prête ?",
+    "markAllReadyConfirmBody": "Les commandes deviendront visibles par les livreurs assignés. Ne le faites qu'une fois les colis physiquement préparés."
   },
   "history": {
     "title": "Historique des livraisons",
@@ -56,21 +61,24 @@
     "payment": "Paiement",
     "empty": "Aucune livraison ne correspond à ces filtres",
     "emptyHint": "Élargissez la période ou effacez les filtres.",
-    "endOfList": "Fin de la liste"
+    "endOfList": "Fin de la liste",
+    "priorityOnly": "Prioritaires"
   },
   "exceptions": {
     "title": "À vérifier",
-    "returned": "Retournée · {patient}",
     "unpaidDelivered": "Livrée impayée · {patient}",
     "coolerUnconfirmed": "Confirmer sac isotherme · {patient}",
-    "none": "Rien à signaler"
+    "none": "Rien à signaler",
+    "awaitingHandover": "À rapporter · {patient}"
   },
   "status": {
     "in_pharmacy": "En pharmacie",
     "picked_up": "Ramassée",
     "completed": "Complétée",
     "returned": "Retournée",
-    "cancelled": "Annulée"
+    "cancelled": "Annulée",
+    "scheduled": "Planifiée",
+    "returned_to_pharmacy": "Rapportée en pharmacie"
   },
   "order": {
     "reference": "Réf. {reference}",
@@ -99,11 +107,34 @@
     "cancelConfirmAction": "Annuler la livraison",
     "keep": "Conserver",
     "edit": "Modifier",
-    "editDisabled": "Modifiable uniquement tant que la livraison est en pharmacie. Le colis est déjà pris en charge par un livreur.",
+    "editDisabled": "Modifiable tant que la livraison est planifiée ou en pharmacie. Le colis est déjà pris en charge par un livreur.",
     "breadcrumb": "Détails",
     "unassign": "Retirer l'assignation",
     "saving": "Enregistrement…",
-    "created": "Créée"
+    "created": "Créée",
+    "markReady": "Marquer prête",
+    "priority": "Prioritaire",
+    "priorityAdd": "Marquer comme prioritaire",
+    "priorityRemove": "Retirer la priorité",
+    "priorityHint": "Livraison prioritaire : le livreur doit s'y rendre en premier.",
+    "awaitingHandoverTitle": "Colis encore chez le livreur",
+    "awaitingHandoverBody": "La livraison a échoué. Le colis doit être rapporté en pharmacie avant l'heure limite ; le livreur confirmera la remise dans l'application.",
+    "requestedTime": "vers {time}",
+    "authorizedRecipient": "Personne autorisée à réceptionner",
+    "packages": "Colis",
+    "packageCount": "{count, plural, =0 {aucun colis} one {# colis} other {# colis}}",
+    "packagesEmpty": "Aucun colis enregistré pour cette commande.",
+    "packagesEmptyHint": "Ajoutez les codes d'étiquette pour que le livreur puisse les vérifier au comptoir.",
+    "packagesInvalid": "Vérifiez les codes d'étiquette.",
+    "addPackage": "Ajouter un colis",
+    "removePackage": "Retirer ce colis",
+    "labelCode": "Code d'étiquette",
+    "labelCodePlaceholder": "4412-A",
+    "packageType": "Type de colis",
+    "coolerForced": "Requis par un colis frigo",
+    "pickupCountMismatch": "{counted} colis ramassés sur {expected} enregistrés",
+    "pickupCountNote": "Le décompte du livreur est conservé tel quel : les colis sur le comptoir font foi.",
+    "failure": "Motif de l'échec"
   },
   "payment": {
     "paid": "Payé",
@@ -222,7 +253,11 @@
     "newPassword": "Nouveau mot de passe",
     "confirmPassword": "Confirmer le nouveau mot de passe",
     "changePassword": "Changer le mot de passe",
-    "passwordWarning": "Changer votre mot de passe met fin à toutes vos sessions, y compris celle-ci. Vous devrez vous reconnecter."
+    "passwordWarning": "Changer votre mot de passe met fin à toutes vos sessions, y compris celle-ci. Vous devrez vous reconnecter.",
+    "passwordHint": "Au moins 12 caractères.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 12 caractères.",
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
+    "passwordSameAsCurrent": "Le nouveau mot de passe doit être différent de l'actuel."
   },
   "login": {
     "title": "Connexion",
@@ -237,6 +272,7 @@
     "genericError": "Connexion impossible pour le moment. Réessayez.",
     "idleNotice": "Vous avez été déconnecté après 30 minutes d'inactivité.",
     "expiredNotice": "Votre session a expiré. Reconnectez-vous.",
+    "passwordChangedNotice": "Votre mot de passe a été modifié. Connectez-vous avec le nouveau.",
     "driverTitle": "Utilisez l'application mobile",
     "driverBody": "Ce tableau de bord est réservé aux administrateurs de pharmacie. Les livreurs utilisent l'application mobile."
   },
@@ -253,7 +289,10 @@
     "DRIVER_INACTIVE": "Ce livreur n'est plus actif.",
     "UNAVAILABLE": "Le service de livraison est injoignable. Réessayez dans un moment.",
     "UNEXPECTED": "Une erreur inattendue est survenue.",
-    "fallback": "L'opération a échoué ({code})."
+    "fallback": "L'opération a échoué ({code}).",
+    "ORDER_NOT_READY": "Cette commande n'a pas encore été déclarée prête.",
+    "ORDER_ALREADY_TERMINAL": "Cette livraison est terminée : elle ne peut plus être modifiée.",
+    "FAILURE_REASON_REQUIRED": "Un motif est requis pour un retour."
   },
   "toast": {
     "orderCreated": "Livraison créée pour {patient}.",
@@ -264,7 +303,16 @@
     "clientCreated": "Patient {name} enregistré.",
     "clientUpdated": "Patient mis à jour.",
     "clientDeactivated": "Patient désactivé.",
-    "clientReactivated": "Patient réactivé."
+    "clientReactivated": "Patient réactivé.",
+    "driverDeactivated": "{name} a été désactivé.",
+    "driverActivated": "{name} a été réactivé.",
+    "inviteCreated": "Code d'invitation généré.",
+    "inviteRevoked": "Code d'invitation révoqué.",
+    "passwordChanged": "Mot de passe modifié. Connectez-vous de nouveau.",
+    "orderMarkedReady": "Commande marquée comme prête.",
+    "ordersMarkedReady": "{count, plural, one {# commande prête} other {# commandes prêtes}}.",
+    "priorityOn": "Marquée comme prioritaire.",
+    "priorityOff": "Priorité retirée."
   },
   "common": {
     "loading": "Chargement…",
@@ -277,5 +325,31 @@
     "errorTitle": "Une erreur est survenue",
     "requestId": "Référence : {id}",
     "required": "Champ obligatoire"
+  },
+  "packageType": {
+    "bag": "Sac",
+    "cooler": "Frigo",
+    "tote": "Bac",
+    "envelope": "Enveloppe"
+  },
+  "failureReason": {
+    "customer_absent": "Client absent",
+    "customer_refused": "Client a refusé la commande",
+    "wrong_address": "Mauvaise adresse",
+    "payment_refused": "Paiement refusé",
+    "other": "Autre"
+  },
+  "paymentException": {
+    "waived_by_pharmacy": "Offerte par la pharmacie",
+    "deferred_to_pharmacy": "Paiement reporté en pharmacie"
+  },
+  "calendar": {
+    "subtitle": "Vue d'ensemble du mois. Les commandes planifiées ne sont pas encore visibles par les livreurs.",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "thisMonth": "Ce mois-ci",
+    "noDeliveries": "Aucune livraison",
+    "deliveries": "{count, plural, one {# livraison} other {# livraisons}}",
+    "scheduledCount": "{count, plural, one {# planifiée} other {# planifiées}}"
   }
 }

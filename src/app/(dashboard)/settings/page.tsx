@@ -1,12 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
+import { PasswordForm } from "@/components/settings/password-form";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { requireSession } from "@/lib/dal/session";
+
+/** Renders the signed-in user's own details behind the session. */
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const t = await getTranslations();
@@ -52,21 +53,7 @@ export default async function SettingsPage() {
           {t("settings.passwordWarning")}
         </p>
 
-        <div className="grid gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="current-password">{t("settings.currentPassword")}</Label>
-            <Input id="current-password" type="password" autoComplete="current-password" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="new-password">{t("settings.newPassword")}</Label>
-            <Input id="new-password" type="password" autoComplete="new-password" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="confirm-password">{t("settings.confirmPassword")}</Label>
-            <Input id="confirm-password" type="password" autoComplete="new-password" />
-          </div>
-          <Button className="w-fit">{t("settings.changePassword")}</Button>
-        </div>
+        <PasswordForm />
       </section>
     </div>
   );

@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import type {
+  CalendarMonth,
   CreateOrderBody,
   Order,
   OrderDetail,
@@ -16,9 +17,14 @@ import { requireAccessToken } from "./session";
 
 export type OrderFilters = {
   date?: string;
+  /** Inclusive date range, an alternative to a single `date`. */
+  from?: string;
+  to?: string;
   status?: OrderStatus;
   driver_id?: string;
   client_id?: string;
+  /** The API takes the string enum, not a boolean. */
+  is_priority?: "true" | "false";
   updated_since?: string;
   limit?: number;
 };
@@ -108,7 +114,7 @@ export async function createOrder(
   });
 }
 
-/** Server-side rule: accepted only while the order is `in_pharmacy`. */
+/** Server-side rule: accepted only while `scheduled` or `in_pharmacy`. */
 export async function updateOrder(id: string, body: UpdateOrderBody): Promise<Order> {
   const token = await requireAccessToken();
   return apiFetch<Order>(`/v1/orders/${id}`, { method: "PATCH", token, body });
@@ -131,3 +137,45 @@ export async function cancelOrder(id: string): Promise<Order> {
   const token = await requireAccessToken();
   return apiFetch<Order>(`/v1/orders/${id}/cancel`, { method: "POST", token });
 }
+
+/**
+ * Staff declare the order physically packed: `scheduled` -> `in_pharmacy`.
+ *
+ * This is the step that makes an order visible to a driver at all — every
+ * driver query excludes `scheduled` rows at the repository layer. It
+ * deliberately does not require an assigned driver: staff pack the bags
+ * whether or not dispatch has picked someone.
+ */
+export async function markOrderReady(id: string): Promise<Order> {
+  const token = await requireAccessToken();
+  return apiFetch<Order>(`/v1/orders/${id}/ready`, { method: "POST", token });
+}
+
+/** Refused on a terminal order with `409 ORDER_ALREADY_TERMINAL`. */
+export async function setOrderPriority(
+  id: string,
+  isPriority: boolean,
+): Promise<Order> {
+  const token = await requireAccessToken();
+  return apiFetch<Order>(`/v1/orders/${id}/priority`, {
+    method: "POST",
+    token,
+    body: { is_priority: isPriority },
+  });
+}
+
+/**
+ * Per-day counts by status. Counts only, no patient data, and deliberately
+ * **not** audit-logged server-side — recording it as a PII read would bury the
+ * real accesses every time someone pages a month (privacy-rules.md 6). Unlike
+ * `getOrder`, this one is safe to call freely.
+ */
+export const getCalendar = cache(
+  async (from: string, to: string): Promise<CalendarMonth> => {
+    const token = await requireAccessToken();
+    return apiFetch<CalendarMonth>("/v1/orders/calendar", {
+      token,
+      query: { from, to },
+    });
+  },
+);

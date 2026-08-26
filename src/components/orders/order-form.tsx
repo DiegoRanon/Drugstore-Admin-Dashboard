@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
-import { LoaderCircle, Snowflake } from "lucide-react";
+import { Flag, LoaderCircle, Plus, Snowflake, Trash2 } from "lucide-react";
 
-import type { DeliveryWindow, PaymentStatus } from "@/api/types";
+import type { DeliveryWindow, PackageType, PaymentStatus } from "@/api/types";
 import { createOrderAction, updateOrderAction } from "@/app/(dashboard)/orders/actions";
+import type { AssignableDriver } from "@/components/orders/assign-driver-menu";
 import { PatientPicker, type PickerClient } from "@/components/orders/patient-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,8 +27,14 @@ import { cn } from "@/lib/utils";
 
 const SECTION = "text-xs font-semibold tracking-wide text-muted-foreground uppercase";
 
+const PACKAGE_TYPES: PackageType[] = ["bag", "cooler", "tote", "envelope"];
+const MAX_PACKAGES = 50;
+
+export type OrderFormPackage = { labelCode: string; packageType: PackageType };
+
 export type OrderFormDefaults = {
   clientId?: string;
+  driverId?: string | null;
   patientName?: string;
   address?: string;
   phoneNumber?: string;
@@ -36,7 +43,12 @@ export type OrderFormDefaults = {
   paymentStatus?: PaymentStatus;
   amountDue?: number | null;
   requiresCoolerBag?: boolean;
+  isPriority?: boolean;
+  packages?: OrderFormPackage[];
 };
+
+/** A row in the package editor. `key` keeps React stable across removals. */
+type PackageRow = OrderFormPackage & { key: string };
 
 /**
  * One form for creating and editing a delivery, shared by the quick-add drawer
@@ -46,19 +58,26 @@ export type OrderFormDefaults = {
  * editable, and the server snapshots them onto the order — editing the patient
  * record later never rewrites where a past package went (PRD 5.3).
  *
- * No medical, pharmaceutical, or prescription field exists here. The API has
- * nowhere to put such data and the UI must not invite it (MVP §4).
+ * No medical, pharmaceutical, or prescription field exists here, and that
+ * includes the package rows: a label code and a closed type enum, with nowhere
+ * to type a medication name (MVP §4, privacy-rules.md §3).
  */
 export function OrderForm({
   mode,
   orderId,
   defaults,
+  drivers,
   onSaved,
   compact = false,
 }: {
   mode: "create" | "edit";
   orderId?: string;
   defaults: OrderFormDefaults;
+  /**
+   * Offered at creation so dispatch can assign while entering the order.
+   * Omitted by the quick-add drawer, where assignment stays on the board.
+   */
+  drivers?: AssignableDriver[];
   /** Called after a successful save. `again` keeps the form open for the next one. */
   onSaved?: (result: { again: boolean; patientName: string }) => void;
   compact?: boolean;
@@ -68,6 +87,16 @@ export function OrderForm({
   const { showFailure, showSuccess } = useActionFeedback();
 
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Row keys only have to be unique within this list. Seeded rows take their
+  // index; rows added later take a counter that is only ever touched from an
+  // event handler, never during render.
+  const nextRowId = useRef(0);
+  const addedRow = (row: OrderFormPackage): PackageRow => ({
+    ...row,
+    key: `added-${nextRowId.current++}`,
+  });
+
   const [selected, setSelected] = useState<PickerClient | null>(
     defaults.clientId
       ? {
@@ -82,12 +111,24 @@ export function OrderForm({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(
     defaults.paymentStatus ?? "unpaid",
   );
+  const [requiresCooler, setRequiresCooler] = useState(defaults.requiresCoolerBag ?? false);
+  const [packages, setPackages] = useState<PackageRow[]>(() =>
+    (defaults.packages ?? []).map((row, index) => ({ ...row, key: `seed-${index}` })),
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isPending, startTransition] = useTransition();
 
   // Bumping this key remounts the prefilled inputs when a different patient is
   // chosen, so `defaultValue` actually takes effect.
   const [formGeneration, setFormGeneration] = useState(0);
+
+  /**
+   * A cooler package forces `requires_cooler_bag` on the server, so the
+   * checkbox follows rather than letting the two appear to disagree. The
+   * disabled control submits nothing, which is fine: the schema applies the
+   * same rule to the payload.
+   */
+  const coolerForced = packages.some((row) => row.packageType === "cooler");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>, again: boolean) {
     event.preventDefault();
@@ -123,6 +164,9 @@ export function OrderForm({
         form.reset();
         setSelected(null);
         setPaymentStatus("unpaid");
+        setRequiresCooler(false);
+        // `form.reset()` cannot clear rows that only exist in state.
+        setPackages([]);
         setFormGeneration((generation) => generation + 1);
       }
 
@@ -235,6 +279,124 @@ export function OrderForm({
           </div>
         </section>
 
+        {/*
+          Dispatch usually knows who is driving the run while the order is being
+          entered, so offering it here saves a second pass over the board. The
+          board's own assign menu remains the place to change it later.
+        */}
+        {mode === "create" && drivers && drivers.length > 0 && (
+          <div className="space-y-1.5">
+            <Label htmlFor="driver_id">{t("order.assignDriver")}</Label>
+            <Select
+              name="driver_id"
+              defaultValue=""
+              items={{
+                "": t("order.unassigned"),
+                ...Object.fromEntries(drivers.map((driver) => [driver.id, driver.name])),
+              }}
+            >
+              <SelectTrigger id="driver_id" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t("order.unassigned")}</SelectItem>
+                {drivers.map((driver) => (
+                  <SelectItem key={driver.id} value={driver.id}>
+                    {driver.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <Separator />
+
+        {/*
+          The label codes printed on the bags. The driver checks these against
+          the counter at pickup, which is the only reason they exist — there is
+          deliberately no free-text field beside them.
+        */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className={SECTION}>{t("order.packages")}</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={packages.length >= MAX_PACKAGES}
+              onClick={() =>
+                setPackages((rows) => [...rows, addedRow({ labelCode: "", packageType: "bag" })])
+              }
+            >
+              <Plus aria-hidden />
+              {t("order.addPackage")}
+            </Button>
+          </div>
+
+          {packages.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("order.packagesEmptyHint")}</p>
+          ) : (
+            <ul className="space-y-2">
+              {packages.map((row, index) => (
+                <li key={row.key} className="flex items-center gap-2">
+                  <Input
+                    name="package_label_code"
+                    aria-label={t("order.labelCode")}
+                    placeholder={t("order.labelCodePlaceholder")}
+                    className="font-mono"
+                    maxLength={32}
+                    defaultValue={row.labelCode}
+                  />
+                  <Select
+                    name="package_type"
+                    value={row.packageType}
+                    onValueChange={(value) =>
+                      setPackages((rows) =>
+                        rows.map((candidate, candidateIndex) =>
+                          candidateIndex === index
+                            ? { ...candidate, packageType: value as PackageType }
+                            : candidate,
+                        ),
+                      )
+                    }
+                    items={Object.fromEntries(
+                      PACKAGE_TYPES.map((value) => [value, t(`packageType.${value}`)]),
+                    )}
+                  >
+                    <SelectTrigger aria-label={t("order.packageType")} className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PACKAGE_TYPES.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {t(`packageType.${value}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("order.removePackage")}
+                    onClick={() =>
+                      setPackages((rows) => rows.filter((candidate) => candidate.key !== row.key))
+                    }
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {errorFor("packages") && (
+            <p className="text-sm text-destructive">{t("order.packagesInvalid")}</p>
+          )}
+        </section>
+
         <Separator />
 
         <section className="space-y-4">
@@ -291,10 +453,27 @@ export function OrderForm({
             <Checkbox
               id="requires_cooler_bag"
               name="requires_cooler_bag"
-              defaultChecked={defaults.requiresCoolerBag ?? false}
+              checked={requiresCooler || coolerForced}
+              disabled={coolerForced}
+              onCheckedChange={(checked) => setRequiresCooler(checked === true)}
             />
             <Snowflake className="size-4 text-cooler" aria-hidden />
             {t("newDelivery.coolerBag")}
+            {coolerForced && (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {t("order.coolerForced")}
+              </span>
+            )}
+          </label>
+
+          <label className="flex items-center gap-3 rounded-md border bg-background px-3 py-3 text-sm">
+            <Checkbox
+              id="is_priority"
+              name="is_priority"
+              defaultChecked={defaults.isPriority ?? false}
+            />
+            <Flag className="size-4 text-status-picked-up" aria-hidden />
+            {t("order.priorityAdd")}
           </label>
         </section>
       </div>

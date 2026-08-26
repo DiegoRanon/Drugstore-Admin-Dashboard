@@ -20,9 +20,20 @@ export type DeliveryWindow = Order["delivery_window"];
 export type PaymentStatus = Order["payment_status"];
 export type PaymentMethod = NonNullable<Order["payment_method"]>;
 
-/** `pickup` / `complete` / `return` belong to the driver app, not this one. */
+/** `pickup`, `complete`, `return`, and `handover` belong to the driver app. */
 export type OrderTransition = OrderDetail["available_transitions"][number];
 export type StatusEvent = OrderDetail["status_events"][number];
+
+/** Label codes printed on the bags — no description field exists, by design. */
+export type OrderPackage = OrderDetail["packages"][number];
+export type PackageType = OrderPackage["package_type"];
+export type FailureReason = NonNullable<OrderDetail["failure_reason"]>;
+export type PaymentException = NonNullable<OrderDetail["payment_exception"]>;
+
+/** Counts per day. No patient data, and not audit-logged server-side. */
+export type CalendarMonth =
+  paths["/v1/orders/calendar"]["get"]["responses"][200]["content"]["application/json"];
+export type CalendarDay = CalendarMonth["days"][number];
 
 export type CreateOrderBody =
   paths["/v1/orders/"]["post"]["requestBody"]["content"]["application/json"];

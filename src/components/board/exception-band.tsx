@@ -6,7 +6,9 @@ import type { Order } from "@/api/types";
 import { collectExceptions, type ExceptionKind } from "@/lib/orders";
 
 const KIND_STYLE: Record<ExceptionKind, { icon: LucideIcon; className: string }> = {
-  returned: {
+  // Failed at the door and still in the van: the pharmacy is owed a handover
+  // before the return deadline. This is the one that needs chasing.
+  awaitingHandover: {
     icon: Undo2,
     className: "border-status-returned/30 bg-status-returned-soft text-status-returned",
   },

@@ -90,7 +90,11 @@ export function LoginForm() {
           role="status"
           className="rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground"
         >
-          {reason === "idle" ? t("login.idleNotice") : t("login.expiredNotice")}
+          {reason === "idle"
+            ? t("login.idleNotice")
+            : reason === "password_changed"
+              ? t("login.passwordChangedNotice")
+              : t("login.expiredNotice")}
         </p>
       )}
 

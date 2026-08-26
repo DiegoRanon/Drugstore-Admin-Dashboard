@@ -2,11 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import {
+  Flag,
   History,
+  Package,
   Phone,
   Snowflake,
   Truck,
   TriangleAlert,
+  Undo2,
+  UserCheck,
   Wallet,
 } from "lucide-react";
 
@@ -14,6 +18,8 @@ import type { OrderTransition } from "@/api/types";
 import { StatusChip } from "@/components/board/status-chip";
 import { AssignDriverMenu } from "@/components/orders/assign-driver-menu";
 import { CancelOrderButton } from "@/components/orders/cancel-order-button";
+import { MarkReadyButton } from "@/components/orders/mark-ready-button";
+import { PriorityToggle } from "@/components/orders/priority-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -29,15 +35,21 @@ import { listDrivers } from "@/lib/dal/drivers";
 import { getOrder } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
 import { formatMoney, formatTimestamp, shortName } from "@/lib/format";
-import { hasPaymentDiscrepancy, isTerminal, shortReference } from "@/lib/orders";
+import {
+  hasPaymentDiscrepancy,
+  isAwaitingHandover,
+  isEditable,
+  isTerminal,
+  shortReference,
+} from "@/lib/orders";
 import { cn } from "@/lib/utils";
 
 /**
- * Only these transitions belong to an admin. `pickup`, `complete`, and `return`
- * are driver actions — they can appear in `available_transitions` and must
- * still never render a button here.
+ * Only these transitions belong to an admin. `pickup`, `complete`, `return`,
+ * and `handover` are driver actions — they can appear in
+ * `available_transitions` and must still never render a button here.
  */
-const ADMIN_TRANSITIONS: OrderTransition[] = ["cancel"];
+const ADMIN_TRANSITIONS: OrderTransition[] = ["mark_ready", "cancel"];
 
 /** Renders patient data: never prerendered, never cached (PRD 8.2). */
 export const dynamic = "force-dynamic";
@@ -76,7 +88,15 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
     }));
 
   const discrepancy = hasPaymentDiscrepancy(order);
-  const editable = order.status === "in_pharmacy";
+  const editable = isEditable(order.status);
+  const open = !isTerminal(order.status);
+
+  // The server accepts a count that disagrees with the order and logs it: the
+  // physical bags on the counter are the truth, and a driver standing there
+  // with an employee must not be blocked. So this is information, not an error.
+  const packageMismatch =
+    order.pickup_package_count !== null &&
+    order.pickup_package_count !== order.package_count;
 
   /**
    * Status events carry `changed_by_user_id` and nothing else, so the name is
@@ -126,10 +146,16 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
               #{shortReference(order.id)}
             </h1>
             <StatusChip status={order.status} />
+            {order.is_priority && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-picked-up-soft px-2 py-0.5 text-xs font-semibold text-status-picked-up">
+                <Flag className="size-3 fill-current" aria-hidden />
+                {t("order.priority")}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/*
             Editing after pickup would mean the delivery in progress no longer
             matches the record of it, so the control explains itself rather than
@@ -148,10 +174,13 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
             </Button>
           )}
 
+          {open && <PriorityToggle orderId={order.id} isPriority={order.is_priority} size="default" />}
+
           {/* Rendered from `available_transitions`; never re-derived here. */}
+          {actions.includes("mark_ready") && <MarkReadyButton orderId={order.id} />}
           {actions.includes("cancel") && <CancelOrderButton orderId={order.id} />}
 
-          {!isTerminal(order.status) && (
+          {open && (
             <AssignDriverMenu
               orderId={order.id}
               currentDriverId={order.driver_id}
@@ -164,6 +193,24 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
 
       {!editable && (
         <p className="text-sm text-muted-foreground">{t("order.editDisabled")}</p>
+      )}
+
+      {/*
+        `returned` is not terminal: the delivery failed but the package is in
+        the driver's van and the pharmacy is owed a handover. Saying so here is
+        the whole reason this status exists separately from
+        `returned_to_pharmacy`.
+      */}
+      {isAwaitingHandover(order.status) && (
+        <div className="flex items-start gap-3 rounded-lg border border-status-returned/30 bg-status-returned-soft px-4 py-3">
+          <Undo2 className="mt-0.5 size-4 shrink-0 text-status-returned" aria-hidden />
+          <div className="text-sm">
+            <p className="font-medium text-status-returned">
+              {t("order.awaitingHandoverTitle")}
+            </p>
+            <p className="text-muted-foreground">{t("order.awaitingHandoverBody")}</p>
+          </div>
+        </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -211,8 +258,29 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
                 </p>
                 <p className="mt-1">
                   {order.delivery_window} · {order.delivery_date}
+                  {order.requested_delivery_time && (
+                    <span className="ml-2 font-mono text-sm text-muted-foreground">
+                      {t("order.requestedTime", { time: order.requested_delivery_time })}
+                    </span>
+                  )}
                 </p>
               </div>
+
+              {/*
+                Who may take the package at the door. PII, like the name and
+                address it sits beside.
+              */}
+              {order.authorized_recipient && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">
+                    {t("order.authorizedRecipient")}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5">
+                    <UserCheck className="size-4 text-muted-foreground" aria-hidden />
+                    {order.authorized_recipient}
+                  </p>
+                </div>
+              )}
             </div>
 
             {order.requires_cooler_bag && (
@@ -225,6 +293,78 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
               </div>
             )}
           </section>
+
+          {/*
+            The label codes printed on the bags, which the driver checks against
+            the counter at pickup. There is no description field here by design:
+            a free-text line item is exactly where a medication name would end
+            up (privacy-rules.md §3).
+          */}
+          <section className="relative overflow-hidden rounded-lg border bg-card">
+            <span className="absolute inset-y-0 left-0 w-1 bg-muted-foreground/30" aria-hidden />
+            <header className="flex items-center gap-2 border-b px-5 py-3">
+              <Package className="size-5 text-muted-foreground" aria-hidden />
+              <h2 className="text-lg font-semibold">{t("order.packages")}</h2>
+              <span className="ml-auto text-sm text-muted-foreground">
+                {t("order.packageCount", { count: order.package_count })}
+              </span>
+            </header>
+
+            {order.packages.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-muted-foreground">
+                {t("order.packagesEmpty")}
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {order.packages.map((pkg) => (
+                  <li key={pkg.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                    <span className="font-mono font-medium">{pkg.label_code}</span>
+                    <span className="rounded border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                      {t(`packageType.${pkg.package_type}`)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {packageMismatch && (
+              <div className="mx-5 mb-4 flex items-start gap-3 rounded-md border bg-muted/50 px-4 py-3">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="text-sm">
+                  <p className="font-medium">
+                    {t("order.pickupCountMismatch", {
+                      counted: order.pickup_package_count ?? 0,
+                      expected: order.package_count,
+                    })}
+                  </p>
+                  <p className="text-muted-foreground">{t("order.pickupCountNote")}</p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/*
+            Why the delivery failed, in the driver's words. `failure_note` is
+            admin-only and never reaches a driver response (privacy-rules.md §3).
+          */}
+          {order.failure_reason && (
+            <section className="relative overflow-hidden rounded-lg border border-status-returned/30 bg-card">
+              <span className="absolute inset-y-0 left-0 w-1 bg-status-returned" aria-hidden />
+              <header className="flex items-center gap-2 border-b px-5 py-3">
+                <Undo2 className="size-5 text-status-returned" aria-hidden />
+                <h2 className="text-lg font-semibold">{t("order.failure")}</h2>
+              </header>
+
+              <div className="px-5 py-4">
+                <p className="font-medium">
+                  {t(`failureReason.${order.failure_reason}`)}
+                </p>
+                {order.failure_note && (
+                  <p className="mt-1 text-sm text-muted-foreground">{order.failure_note}</p>
+                )}
+              </div>
+            </section>
+          )}
 
           <section
             className={cn(
@@ -268,6 +408,25 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
               </div>
             </div>
 
+            {/*
+              The pharmacy authorised handing the package over without taking
+              payment. This is what explains a completed-but-unpaid order, and
+              is the field that will feed end-of-shift reconciliation.
+            */}
+            {order.payment_exception && (
+              <div className="mx-5 mb-4 flex items-start gap-3 rounded-md border bg-muted/50 px-4 py-3">
+                <UserCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="text-sm">
+                  <p className="font-medium">
+                    {t(`paymentException.${order.payment_exception}`)}
+                  </p>
+                  {order.payment_exception_note && (
+                    <p className="text-muted-foreground">{order.payment_exception_note}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {discrepancy && (
               <div className="mx-5 mb-4 flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
@@ -288,6 +447,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/orders/[id
             <h2 className="text-lg font-semibold">{t("order.timeline")}</h2>
           </header>
 
+          {/*
+            Every transition timestamp the order carries is already an entry
+            here — `ready_at`, `returned_to_pharmacy_at`, and the rest are the
+            same moments as their `status_events` rows.
+          */}
           <ol className="space-y-5 px-5 py-4">
             {[...order.status_events].reverse().map((event, index) => (
               <li key={`${event.status}-${event.occurred_at}`} className="flex gap-3">

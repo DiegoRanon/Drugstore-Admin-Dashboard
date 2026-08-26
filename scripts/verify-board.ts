@@ -81,6 +81,19 @@ async function createOrder(
 }
 
 /**
+ * `POST /v1/orders` now creates a `scheduled` order, which no driver can see
+ * and which sits outside the pharmacy's working day. Seeding a board that
+ * looks like a real one therefore takes this second call.
+ */
+async function markReady(token: string, orderId: string): Promise<void> {
+  const response = await fetch(`${API}/v1/orders/${orderId}/ready`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw await ApiError.fromResponse(response);
+}
+
+/**
  * `html` is the raw response; `dom` has `<script>` blocks removed.
  *
  * Always assert content against `dom`. `next-intl` serialises the entire message
@@ -204,7 +217,15 @@ async function verifyHistory(cookie: string, token: string, driverId: string | u
 async function verifyTransitions(cookie: string, token: string) {
   console.log("\nAction buttons follow available_transitions");
 
-  const statuses = ["in_pharmacy", "picked_up", "completed", "returned", "cancelled"] as const;
+  const statuses = [
+    "scheduled",
+    "in_pharmacy",
+    "picked_up",
+    "completed",
+    "returned",
+    "returned_to_pharmacy",
+    "cancelled",
+  ] as const;
 
   for (const status of statuses) {
     const list = await fetch(`${API}/v1/orders/?status=${status}&limit=1`, {
@@ -232,13 +253,75 @@ async function verifyTransitions(cookie: string, token: string) {
       `transitions=[${detail.available_transitions.join(", ")}] but cancel ${cancelShown ? "was" : "was not"} rendered`,
     );
 
-    // pickup / complete / return belong to the driver app and must never appear
-    // here, even when the server lists them as available.
+    const readyShown = /Marquer prête|Mark ready/.test(page.dom);
+    const readyAllowed = detail.available_transitions.includes("mark_ready");
+
+    check(
+      `${status}: mark-ready is shown only when the server allows it`,
+      readyShown === readyAllowed,
+      `transitions=[${detail.available_transitions.join(", ")}] but mark-ready ${readyShown ? "was" : "was not"} rendered`,
+    );
+
+    // pickup / complete / return / handover belong to the driver app and must
+    // never appear here, even when the server lists them as available.
     check(
       `${status}: no driver-only action leaks into the admin UI`,
-      !/Ramasser|Confirmer la livraison|Retourner le colis/.test(page.dom),
+      !/Ramasser|Confirmer la livraison|Retourner le colis|Remettre à la pharmacie/.test(page.dom),
     );
   }
+}
+
+/**
+ * The calendar an order is born into.
+ *
+ * `GET /v1/orders/calendar` returns integers per day and is deliberately not
+ * audit-logged, so the page can be paged freely — the counting check that
+ * proves it lives in `verify-compliance.ts`.
+ */
+async function verifyCalendar(cookie: string, token: string) {
+  console.log("\nCalendar");
+
+  const page = await fetchPage(cookie, "/calendar");
+  check("the calendar renders for a signed-in admin", page.status === 200, `status ${page.status}`);
+
+  const month = `${today().slice(0, 7)}-01`;
+  const lastDay = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0))
+    .toISOString()
+    .slice(0, 10);
+
+  const api = await fetch(`${API}/v1/orders/calendar?from=${month}&to=${lastDay}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const body = (await api.json()) as {
+    days: { delivery_date: string; total: number; by_status: Record<string, number> }[];
+  };
+  check("the calendar endpoint answers for the visible month", api.status === 200);
+
+  const raw = JSON.stringify(body);
+  check(
+    "the calendar payload carries no patient data",
+    !/patient_name|address|phone_number/.test(raw),
+  );
+  check(
+    "every day is a whole-number count",
+    body.days.every((day) => Number.isInteger(day.total)),
+  );
+
+  const todaysCount = body.days.find((day) => day.delivery_date === today())?.total ?? 0;
+  check(
+    "today's total is shown on the grid",
+    todaysCount === 0 || page.dom.includes(String(todaysCount)),
+    `expected today's cell to show ${todaysCount}`,
+  );
+
+  // The board behind a day link is audit-logged, so prefetch must be off.
+  check(
+    "day links do not prefetch the audit-logged board",
+    !/<link[^>]+rel="prefetch"[^>]+\/\?date=/.test(page.html),
+  );
+
+  const garbage = await fetchPage(cookie, "/calendar?month=not-a-month");
+  check("an invalid month falls back to today instead of erroring", garbage.status === 200);
 }
 
 async function verifySnapshotIntegrity(cookie: string, token: string) {
@@ -317,6 +400,11 @@ async function main() {
   });
   const afternoon = await createOrder(token, second.id, "PM", { payment_status: "paid" });
   const assigned = await createOrder(token, first.id, "AM", { amount_due: 12 });
+
+  // Two of the three go onto the counter; `scheduled` stays behind so the
+  // board has one order in each half of the new lifecycle.
+  await markReady(token, morning.id);
+  await markReady(token, afternoon.id);
 
   if (drivers[0]) {
     await fetch(`${API}/v1/orders/${assigned.id}/assign`, {
@@ -470,11 +558,31 @@ async function main() {
     !detail.dom.includes("Ramasser") && !detail.dom.includes("Proof of delivery"),
   );
 
+  // The step without which nothing else in the lifecycle can happen.
+  const scheduledDetail = await fetchPage(cookie, `/orders/${assigned.id}`);
+  check(
+    "a scheduled order offers mark-ready",
+    scheduledDetail.dom.includes("Marquer prête") || scheduledDetail.dom.includes("Mark ready"),
+  );
+  check(
+    "an order already on the counter does not offer mark-ready again",
+    !detail.dom.includes("Marquer prête") && !detail.dom.includes("Mark ready"),
+  );
+  check(
+    "a scheduled order is still editable",
+    scheduledDetail.dom.includes("Modifier") || scheduledDetail.dom.includes("Edit"),
+  );
+  check(
+    "the board offers to mark the day's scheduled orders ready in one go",
+    board.dom.includes("Tout marquer prêt") || board.dom.includes("Mark all ready"),
+  );
+
   const missing = await fetchPage(cookie, "/orders/00000000-0000-4000-8000-000000000000");
   check("an unknown order id is a 404", missing.status === 404, `status ${missing.status}`);
 
   await verifyHistory(cookie, token, drivers[0]?.id);
   await verifyTransitions(cookie, token);
+  await verifyCalendar(cookie, token);
   await verifySnapshotIntegrity(cookie, token);
 
   console.log(`\n${passed} passed, ${failed} failed\n`);

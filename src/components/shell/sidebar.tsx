@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import {
+  CalendarDays,
   CarFront,
   HelpCircle,
   History,
@@ -38,6 +39,11 @@ export async function Sidebar({
 
       <nav aria-label={t("nav.deliveries")} className="flex flex-col gap-1 px-3">
         <NavLink href="/" exact label={t("nav.deliveries")} icon={<Truck {...iconProps} />} />
+        <NavLink
+          href="/calendar"
+          label={t("nav.calendar")}
+          icon={<CalendarDays {...iconProps} />}
+        />
         <NavLink href="/orders" label={t("nav.history")} icon={<History {...iconProps} />} />
         <NavLink href="/clients" label={t("nav.patients")} icon={<Users {...iconProps} />} />
         <NavLink href="/drivers" label={t("nav.drivers")} icon={<CarFront {...iconProps} />} />

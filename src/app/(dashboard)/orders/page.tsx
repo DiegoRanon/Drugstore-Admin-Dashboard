@@ -12,19 +12,12 @@ import { listDrivers } from "@/lib/dal/drivers";
 import { getOrderHistory, type OrderFilters } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
 import { formatMoney, formatPlainDate, shortName } from "@/lib/format";
-import { indexDrivers, shortReference } from "@/lib/orders";
+import { indexDrivers, ORDER_STATUSES, shortReference } from "@/lib/orders";
 
 /** Renders patient data: never prerendered, never cached (PRD 8.2). */
 export const dynamic = "force-dynamic";
 
 const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const STATUSES: OrderStatus[] = [
-  "in_pharmacy",
-  "picked_up",
-  "completed",
-  "returned",
-  "cancelled",
-];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function first(value: string | string[] | undefined): string | undefined {
@@ -42,13 +35,18 @@ export default async function OrderHistoryPage({ searchParams }: PageProps<"/ord
   const status = first(params.status);
   const driverId = first(params.driver_id);
   const clientId = first(params.client_id);
+  const isPriority = first(params.is_priority);
   const pagesParam = Number(first(params.pages) ?? 1);
 
   const filters: OrderFilters = {
     date: date && PLAIN_DATE.test(date) ? date : undefined,
-    status: status && STATUSES.includes(status as OrderStatus) ? (status as OrderStatus) : undefined,
+    status:
+      status && ORDER_STATUSES.includes(status as OrderStatus)
+        ? (status as OrderStatus)
+        : undefined,
     driver_id: driverId && UUID.test(driverId) ? driverId : undefined,
     client_id: clientId && UUID.test(clientId) ? clientId : undefined,
+    is_priority: isPriority === "true" || isPriority === "false" ? isPriority : undefined,
   };
 
   const pages = Number.isFinite(pagesParam) && pagesParam > 0 ? Math.floor(pagesParam) : 1;

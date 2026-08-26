@@ -6,6 +6,7 @@ import { BoardSkeleton } from "@/components/board/board-skeleton";
 import { DateStepper } from "@/components/board/date-stepper";
 import { ExceptionBand } from "@/components/board/exception-band";
 import { LiveUpdates } from "@/components/board/live-updates";
+import { PrepareBand } from "@/components/board/prepare-band";
 import { NewDeliveryTrigger } from "@/components/new-delivery/new-delivery-trigger";
 import type { Locale } from "@/i18n/config";
 import { listDrivers } from "@/lib/dal/drivers";
@@ -88,8 +89,13 @@ async function BoardContent({
       name: shortName(driver.first_name, driver.last_name),
     }));
 
+  // Orders nobody has packed yet. Until somebody declares these ready, no
+  // driver can see them at all.
+  const scheduled = orders.filter((order) => order.status === "scheduled");
+
   return (
     <>
+      <PrepareBand orderIds={scheduled.map((order) => order.id)} />
       <ExceptionBand orders={orders} />
       <div className="grid gap-4 lg:grid-cols-2">
         <BoardColumn

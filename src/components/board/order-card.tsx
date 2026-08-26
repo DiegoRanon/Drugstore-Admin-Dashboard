@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Snowflake, User } from "lucide-react";
+import { Flag, Snowflake, User } from "lucide-react";
 
 import type { Driver, Order } from "@/api/types";
 import { StatusChip } from "@/components/board/status-chip";
@@ -8,6 +8,7 @@ import {
   AssignDriverMenu,
   type AssignableDriver,
 } from "@/components/orders/assign-driver-menu";
+import { MarkReadyButton } from "@/components/orders/mark-ready-button";
 import type { Locale } from "@/i18n/config";
 import { formatMoney, shortName } from "@/lib/format";
 import { isTerminal, shortReference, STATUS_STYLE } from "@/lib/orders";
@@ -59,7 +60,18 @@ export async function OrderCard({
               #{shortReference(order.id)}
             </span>
           </div>
-          <StatusChip status={order.status} className="shrink-0" />
+          <div className="flex shrink-0 items-center gap-1.5">
+            {order.is_priority && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-status-picked-up-soft px-2 py-0.5 text-xs font-semibold text-status-picked-up"
+                title={t("order.priorityHint")}
+              >
+                <Flag className="size-3 fill-current" aria-hidden />
+                {t("order.priority")}
+              </span>
+            )}
+            <StatusChip status={order.status} />
+          </div>
         </div>
 
         <p className="text-sm text-muted-foreground">{order.address}</p>
@@ -101,7 +113,21 @@ export async function OrderCard({
             A closed delivery records who handled it; an open one is still
             assignable, and assigning is the main action of the morning.
           */}
-          {closed ? (
+          {order.status === "scheduled" ? (
+            /*
+              The list payload carries no `available_transitions` — that field
+              is detail-only — so this is gated on the status instead. The
+              server is still the authority and refuses anything stale.
+            */
+            <div className="flex items-center gap-2">
+              <AssignDriverMenu
+                orderId={order.id}
+                currentDriverId={order.driver_id}
+                drivers={assignableDrivers}
+              />
+              <MarkReadyButton orderId={order.id} size="sm" />
+            </div>
+          ) : closed ? (
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <User className="size-3.5" aria-hidden />
               {driver

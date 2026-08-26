@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/errors";
 import { getOrder } from "@/lib/dal/orders";
 import { requireSession } from "@/lib/dal/session";
-import { shortReference } from "@/lib/orders";
+import { isEditable, shortReference } from "@/lib/orders";
 
 /** Renders patient data: never prerendered, never cached (PRD 8.2). */
 export const dynamic = "force-dynamic";
@@ -65,13 +65,13 @@ export default async function EditOrderPage({ params }: PageProps<"/orders/[id]/
       </div>
 
       {/*
-        The server accepts a PATCH only while the order is `in_pharmacy`. Once a
-        driver holds the package, changing the address would mean the delivery in
-        progress no longer matches the record of it — so this route refuses to
-        render a form at all rather than letting someone submit and collect a 422
-        (PRD 5.3).
+        The server accepts a PATCH while the order is `scheduled` or
+        `in_pharmacy`. Once a driver holds the package, changing the address
+        would mean the delivery in progress no longer matches the record of it —
+        so this route refuses to render a form at all rather than letting someone
+        submit and collect a 422 (PRD 5.3).
       */}
-      {order.status === "in_pharmacy" ? (
+      {isEditable(order.status) ? (
         <div className="rounded-lg border bg-card">
           <OrderForm
             mode="edit"
@@ -85,6 +85,15 @@ export default async function EditOrderPage({ params }: PageProps<"/orders/[id]/
               paymentStatus: order.payment_status,
               amountDue: order.amount_due,
               requiresCoolerBag: order.requires_cooler_bag,
+              isPriority: order.is_priority,
+              /*
+                A PATCH replaces the package list wholesale, so the form is
+                seeded with the current rows and always submits the full set.
+              */
+              packages: order.packages.map((pkg) => ({
+                labelCode: pkg.label_code,
+                packageType: pkg.package_type,
+              })),
             }}
           />
         </div>

@@ -20,7 +20,8 @@
     "newDelivery": "New delivery",
     "signOut": "Sign out",
     "language": "Language",
-    "searchPatients": "Search patients…"
+    "searchPatients": "Search patients…",
+    "calendar": "Calendar"
   },
   "board": {
     "today": "Today",
@@ -37,7 +38,11 @@
     "retry": "Try again",
     "updatesLive": "Updating automatically",
     "updatesPaused": "Paused",
-    "updatesError": "Updates interrupted"
+    "updatesError": "Updates interrupted",
+    "toPrepare": "{count, plural, one {# order to prepare} other {# orders to prepare}}",
+    "markAllReady": "Mark all ready",
+    "markAllReadyConfirmTitle": "Mark {count, plural, one {# order} other {# orders}} as ready?",
+    "markAllReadyConfirmBody": "They become visible to their assigned drivers. Only do this once the bags are physically packed."
   },
   "history": {
     "title": "Delivery history",
@@ -56,21 +61,24 @@
     "payment": "Payment",
     "empty": "No deliveries match these filters",
     "emptyHint": "Widen the date range or clear the filters.",
-    "endOfList": "End of list"
+    "endOfList": "End of list",
+    "priorityOnly": "Priority only"
   },
   "exceptions": {
     "title": "Needs attention",
-    "returned": "Returned · {patient}",
     "unpaidDelivered": "Delivered unpaid · {patient}",
     "coolerUnconfirmed": "Confirm cooler bag · {patient}",
-    "none": "Nothing to flag"
+    "none": "Nothing to flag",
+    "awaitingHandover": "To bring back · {patient}"
   },
   "status": {
     "in_pharmacy": "In pharmacy",
     "picked_up": "Picked up",
     "completed": "Completed",
     "returned": "Returned",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "scheduled": "Scheduled",
+    "returned_to_pharmacy": "Returned to pharmacy"
   },
   "order": {
     "reference": "Ref. {reference}",
@@ -99,11 +107,34 @@
     "cancelConfirmAction": "Cancel delivery",
     "keep": "Keep it",
     "edit": "Edit",
-    "editDisabled": "Editable only while the delivery is in the pharmacy. A driver already has the package.",
+    "editDisabled": "Editable while the delivery is scheduled or in the pharmacy. A driver already has the package.",
     "breadcrumb": "Details",
     "unassign": "Remove assignment",
     "saving": "Saving…",
-    "created": "Created"
+    "created": "Created",
+    "markReady": "Mark ready",
+    "priority": "Priority",
+    "priorityAdd": "Mark as priority",
+    "priorityRemove": "Remove priority",
+    "priorityHint": "Priority delivery: the driver should reach this stop first.",
+    "awaitingHandoverTitle": "Package still with the driver",
+    "awaitingHandoverBody": "The delivery failed. The package has to come back to the pharmacy before the deadline; the driver confirms the handover in the app.",
+    "requestedTime": "around {time}",
+    "authorizedRecipient": "Authorized recipient",
+    "packages": "Packages",
+    "packageCount": "{count, plural, =0 {no packages} one {# package} other {# packages}}",
+    "packagesEmpty": "No packages recorded for this delivery.",
+    "packagesEmptyHint": "Add the label codes so the driver can check them at the counter.",
+    "packagesInvalid": "Check the label codes.",
+    "addPackage": "Add a package",
+    "removePackage": "Remove this package",
+    "labelCode": "Label code",
+    "labelCodePlaceholder": "4412-A",
+    "packageType": "Package type",
+    "coolerForced": "Required by a cooler package",
+    "pickupCountMismatch": "{counted} packages picked up of {expected} recorded",
+    "pickupCountNote": "The driver's count is kept as given: the bags on the counter are the truth.",
+    "failure": "Failure reason"
   },
   "payment": {
     "paid": "Paid",
@@ -222,7 +253,11 @@
     "newPassword": "New password",
     "confirmPassword": "Confirm new password",
     "changePassword": "Change password",
-    "passwordWarning": "Changing your password ends every one of your sessions, including this one. You will have to sign in again."
+    "passwordWarning": "Changing your password ends every one of your sessions, including this one. You will have to sign in again.",
+    "passwordHint": "At least 12 characters.",
+    "passwordTooShort": "The password must be at least 12 characters.",
+    "passwordMismatch": "The two passwords do not match.",
+    "passwordSameAsCurrent": "The new password must be different from your current one."
   },
   "login": {
     "title": "Sign in",
@@ -237,6 +272,7 @@
     "genericError": "Unable to sign in right now. Please try again.",
     "idleNotice": "You were signed out after 30 minutes of inactivity.",
     "expiredNotice": "Your session expired. Please sign in again.",
+    "passwordChangedNotice": "Your password has been changed. Sign in with your new password.",
     "driverTitle": "Use the mobile app",
     "driverBody": "This dashboard is for pharmacy administrators. Drivers use the mobile app."
   },
@@ -253,7 +289,10 @@
     "DRIVER_INACTIVE": "This driver is no longer active.",
     "UNAVAILABLE": "The delivery service is unreachable. Try again in a moment.",
     "UNEXPECTED": "An unexpected error occurred.",
-    "fallback": "The operation failed ({code})."
+    "fallback": "The operation failed ({code}).",
+    "ORDER_NOT_READY": "This order has not been declared ready yet.",
+    "ORDER_ALREADY_TERMINAL": "This delivery is finished and can no longer be changed.",
+    "FAILURE_REASON_REQUIRED": "A reason is required for a return."
   },
   "toast": {
     "orderCreated": "Delivery created for {patient}.",
@@ -264,7 +303,16 @@
     "clientCreated": "Patient {name} saved.",
     "clientUpdated": "Patient updated.",
     "clientDeactivated": "Patient deactivated.",
-    "clientReactivated": "Patient reactivated."
+    "clientReactivated": "Patient reactivated.",
+    "driverDeactivated": "{name} has been deactivated.",
+    "driverActivated": "{name} has been reactivated.",
+    "inviteCreated": "Invite code generated.",
+    "inviteRevoked": "Invite code revoked.",
+    "passwordChanged": "Password changed. Sign in again.",
+    "orderMarkedReady": "Delivery marked ready.",
+    "ordersMarkedReady": "{count, plural, one {# delivery ready} other {# deliveries ready}}.",
+    "priorityOn": "Marked as priority.",
+    "priorityOff": "Priority removed."
   },
   "common": {
     "loading": "Loading…",
@@ -277,5 +325,31 @@
     "errorTitle": "Something went wrong",
     "requestId": "Reference: {id}",
     "required": "Required field"
+  },
+  "packageType": {
+    "bag": "Bag",
+    "cooler": "Cooler",
+    "tote": "Tote",
+    "envelope": "Envelope"
+  },
+  "failureReason": {
+    "customer_absent": "Customer absent",
+    "customer_refused": "Customer refused the delivery",
+    "wrong_address": "Wrong address",
+    "payment_refused": "Payment refused",
+    "other": "Other"
+  },
+  "paymentException": {
+    "waived_by_pharmacy": "Waived by the pharmacy",
+    "deferred_to_pharmacy": "Payment deferred to the pharmacy"
+  },
+  "calendar": {
+    "subtitle": "The month at a glance. Scheduled orders are not visible to drivers yet.",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "thisMonth": "This month",
+    "noDeliveries": "No deliveries",
+    "deliveries": "{count, plural, one {# delivery} other {# deliveries}}",
+    "scheduledCount": "{count, plural, one {# scheduled} other {# scheduled}}"
   }
 }
