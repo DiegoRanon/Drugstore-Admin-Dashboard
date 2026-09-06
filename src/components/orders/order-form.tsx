@@ -7,6 +7,11 @@ import { Flag, LoaderCircle, Plus, Snowflake, Trash2 } from "lucide-react";
 
 import type { DeliveryWindow, PackageType, PaymentStatus } from "@/api/types";
 import { createOrderAction, updateOrderAction } from "@/app/(dashboard)/orders/actions";
+import {
+  AddressPicker,
+  emptyAddress,
+  type AddressValue,
+} from "@/components/orders/address-picker";
 import type { AssignableDriver } from "@/components/orders/assign-driver-menu";
 import { PatientPicker, type PickerClient } from "@/components/orders/patient-picker";
 import { Button } from "@/components/ui/button";
@@ -37,9 +42,13 @@ export type OrderFormDefaults = {
   driverId?: string | null;
   patientName?: string;
   address?: string;
+  /** The geocode already stored on the order, when editing one. */
+  addressGeocode?: Omit<AddressValue, "address">;
   phoneNumber?: string;
   deliveryDate: string;
   deliveryWindow?: DeliveryWindow;
+  requestedTimeStart?: string | null;
+  requestedTimeEnd?: string | null;
   paymentStatus?: PaymentStatus;
   amountDue?: number | null;
   requiresCoolerBag?: boolean;
@@ -104,9 +113,35 @@ export function OrderForm({
           name: defaults.patientName ?? "",
           address: defaults.address ?? "",
           phone_number: defaults.phoneNumber ?? "",
+          place_id: defaults.addressGeocode?.place_id ?? null,
+          formatted_address: defaults.addressGeocode?.formatted_address ?? null,
+          latitude: defaults.addressGeocode?.latitude ?? null,
+          longitude: defaults.addressGeocode?.longitude ?? null,
         }
       : null,
   );
+
+  /**
+   * The address the picker opens on, and the geocode that goes with it.
+   *
+   * A freshly chosen patient wins over the order's own defaults, which is what
+   * makes selecting a patient prefill the field. Both are read at the same
+   * time so the text and its coordinates can never come from different places
+   * — an address from the patient with a coordinate from the order would route
+   * the delivery somewhere the address does not say.
+   */
+  const addressDefault: AddressValue = selected
+    ? {
+        address: selected.address,
+        place_id: selected.place_id,
+        formatted_address: selected.formatted_address,
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+      }
+    : {
+        ...emptyAddress(defaults.address ?? ""),
+        ...(defaults.addressGeocode ?? {}),
+      };
 
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(
     defaults.paymentStatus ?? "unpaid",
@@ -224,12 +259,16 @@ export function OrderForm({
           </Field>
 
           <Field id="address" label={t("newDelivery.address")} error={errorFor("address")}>
-            <Input
+            {/*
+              Remounted on formGeneration like the other prefilled fields: the
+              picker holds the typed text and its geocode in state, so choosing
+              a different patient has to reset both together.
+            */}
+            <AddressPicker
               id="address"
               name="address"
               key={`address-${formGeneration}`}
-              defaultValue={selected?.address ?? defaults.address ?? ""}
-              maxLength={500}
+              defaultValue={addressDefault}
               required
             />
           </Field>
@@ -277,6 +316,46 @@ export function OrderForm({
               </SelectContent>
             </Select>
           </div>
+        </section>
+
+        {/*
+          Optional, and narrower than the AM/PM window when the pharmacy has
+          promised a patient something more specific. The route optimizer
+          treats it as a constraint, so a range entered here actually moves the
+          stop — which is also why leaving it blank is the right default: a
+          made-up window is a promise nobody made.
+        */}
+        <section className="space-y-2">
+          <p className={SECTION}>{t("newDelivery.timeRange")}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <Field
+              id="requested_time_start"
+              label={t("newDelivery.timeRangeStart")}
+              error={errorFor("requested_time_start")}
+            >
+              <Input
+                id="requested_time_start"
+                name="requested_time_start"
+                type="time"
+                defaultValue={defaults.requestedTimeStart ?? ""}
+              />
+            </Field>
+            <Field
+              id="requested_time_end"
+              label={t("newDelivery.timeRangeEnd")}
+              error={errorFor("requested_time_end")}
+            >
+              <Input
+                id="requested_time_end"
+                name="requested_time_end"
+                type="time"
+                defaultValue={defaults.requestedTimeEnd ?? ""}
+              />
+            </Field>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t("newDelivery.timeRangeHint")}
+          </p>
         </section>
 
         {/*

@@ -13,10 +13,11 @@
     "verify:api": "node --conditions=react-server --import tsx scripts/verify-api.ts",
     "verify:session": "node --import tsx scripts/verify-session.ts",
     "verify:board": "node --import tsx scripts/verify-board.ts",
-    "verify:all": "npm run verify:i18n && npm run verify:api && npm run cooldown && npm run verify:session && npm run cooldown && npm run verify:board && npm run cooldown && npm run verify:writes",
+    "verify:all": "npm run verify:i18n && npm run verify:api && npm run cooldown && npm run verify:session && npm run cooldown && npm run verify:board && npm run cooldown && npm run verify:writes && npm run cooldown && npm run verify:routes",
     "cooldown": "node -e \"console.log('  cooling down 65s so the API 100/min per-user budget resets');setTimeout(function(){}, 65000)\"",
     "verify:compliance": "node --import tsx scripts/verify-compliance.ts",
     "verify:writes": "node --import tsx scripts/verify-writes.ts",
+    "verify:routes": "node --import tsx scripts/verify-routes.ts",
     "verify:i18n": "node --import tsx scripts/verify-i18n.ts"
   },
   "dependencies": {

@@ -1,14 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import {
-  CalendarDays,
-  CarFront,
-  HelpCircle,
-  History,
-  KeyRound,
-  Settings,
-  Truck,
-  Users,
-} from "lucide-react";
+import { CalendarDays, CarFront, HelpCircle, History, KeyRound, Route, Settings, Truck, Users } from "lucide-react";
 
 import { NavLink } from "@/components/shell/nav-link";
 import { NewDeliveryTrigger } from "@/components/new-delivery/new-delivery-trigger";
@@ -44,6 +35,7 @@ export async function Sidebar({
           label={t("nav.calendar")}
           icon={<CalendarDays {...iconProps} />}
         />
+        <NavLink href="/routes" label={t("nav.routes")} icon={<Route {...iconProps} />} />
         <NavLink href="/orders" label={t("nav.history")} icon={<History {...iconProps} />} />
         <NavLink href="/clients" label={t("nav.patients")} icon={<Users {...iconProps} />} />
         <NavLink href="/drivers" label={t("nav.drivers")} icon={<CarFront {...iconProps} />} />

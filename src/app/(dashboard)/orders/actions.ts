@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
-import type { Order } from "@/api/types";
+import type { Order, OptimizeRouteResult } from "@/api/types";
 import {
   assignDriverSchema,
   createOrderSchema,
+  optimizeRouteSchema,
   orderFormFromFormData,
   updateOrderSchema,
 } from "@/lib/schemas/order";
@@ -22,6 +23,7 @@ import {
   createOrder,
   getOrder,
   markOrderReady,
+  optimizeRoute,
   setOrderPriority,
   updateOrder,
 } from "@/lib/dal/orders";
@@ -228,6 +230,39 @@ export async function setPriorityAction(
     const order = await setOrderPriority(orderId, isPriority);
     revalidateOrderViews(orderId);
     return succeed({ isPriority: order.is_priority });
+  } catch (error) {
+    return toFailure(error);
+  }
+}
+
+/**
+ * Sequences a driver's day from the dashboard (Route Optimizer).
+ *
+ * The pharmacy runs this before the driver leaves, so the stop order is on the
+ * packing counter's screen at pickup rather than something the driver has to
+ * ask for once they are already out. The driver can still re-run it, or
+ * reorder by hand, from their own app — whichever ran last wins, which is the
+ * intent, since the later actor knows more.
+ *
+ * A provider outage is not a failure here: the server keeps the previous
+ * sequence and reports `degraded`, and the caller surfaces that rather than an
+ * error toast.
+ */
+export async function optimizeRouteAction(
+  input: unknown,
+): Promise<ActionResult<OptimizeRouteResult>> {
+  await requireSession();
+
+  const parsed = optimizeRouteSchema.safeParse(input);
+  if (!parsed.success) {
+    return invalid(fieldErrorsOf(parsed.error));
+  }
+
+  try {
+    const result = await optimizeRoute(parsed.data);
+    revalidateOrderViews();
+    revalidatePath("/routes");
+    return succeed(result);
   } catch (error) {
     return toFailure(error);
   }

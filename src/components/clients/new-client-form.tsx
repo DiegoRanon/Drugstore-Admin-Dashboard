@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { LoaderCircle, TriangleAlert } from "lucide-react";
 
 import { createClientAction } from "@/app/(dashboard)/clients/actions";
+import { AddressPicker } from "@/components/orders/address-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +58,11 @@ export function NewClientForm() {
 
       <div className="space-y-1.5">
         <Label htmlFor="address">{t("clients.address")}</Label>
-        <Input id="address" name="address" maxLength={500} required />
+        {/*
+          Standardizing here is what makes every future order for this patient
+          routable without the employee re-picking the address each time.
+        */}
+        <AddressPicker id="address" name="address" required />
         {errorFor("address") && (
           <p className="text-sm text-destructive" role="alert">
             {t("common.required")}

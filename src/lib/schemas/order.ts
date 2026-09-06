@@ -13,6 +13,7 @@ import type { CreateOrderBody, UpdateOrderBody } from "@/api/types";
  */
 
 const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const PLAIN_TIME = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 const MAX_AMOUNT = 99_999_999.99;
 const MAX_PACKAGES = 50;
 
@@ -53,8 +54,20 @@ const orderFields = z.object({
   patient_name: z.string().trim().min(1).max(255),
   address: z.string().trim().min(1).max(500),
   phone_number: z.string().trim().min(1).max(50),
+  /**
+   * Captured from Places when the employee picked a suggestion. All four
+   * travel together or not at all — the server pairs them with a CHECK
+   * constraint, and half a coordinate routes to the wrong hemisphere.
+   */
+  place_id: z.string().trim().min(1).max(255).nullable(),
+  formatted_address: z.string().trim().min(1).max(500).nullable(),
+  latitude: z.number().min(-90).max(90).nullable(),
+  longitude: z.number().min(-180).max(180).nullable(),
   delivery_date: z.string().regex(PLAIN_DATE),
   delivery_window: deliveryWindow,
+  /** An explicit promise — "between 2 and 4". Both ends or neither. */
+  requested_time_start: z.string().regex(PLAIN_TIME).nullable(),
+  requested_time_end: z.string().regex(PLAIN_TIME).nullable(),
   payment_status: paymentStatus,
   amount_due: money.nullish(),
   requires_cooler_bag: z.boolean(),
@@ -88,7 +101,52 @@ function normalize<
   };
 }
 
-export const createOrderSchema = orderFields.transform(normalize);
+/**
+ * The two cross-field rules the server also enforces, checked here so the
+ * employee sees a field error rather than a 422 after the round trip.
+ */
+function checkRanges(
+  order: {
+    requested_time_start?: string | null;
+    requested_time_end?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  },
+  ctx: z.RefinementCtx,
+) {
+  const start = order.requested_time_start ?? null;
+  const end = order.requested_time_end ?? null;
+
+  if (start !== null || end !== null) {
+    if (start === null || end === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: [start ? "requested_time_end" : "requested_time_start"],
+        message: "time_range_incomplete",
+      });
+    } else if (start >= end) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["requested_time_end"],
+        message: "time_range_inverted",
+      });
+    }
+  }
+
+  const hasLat = order.latitude !== undefined && order.latitude !== null;
+  const hasLng = order.longitude !== undefined && order.longitude !== null;
+  if (hasLat !== hasLng) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["address"],
+      message: "coordinates_unpaired",
+    });
+  }
+}
+
+export const createOrderSchema = orderFields
+  .superRefine(checkRanges)
+  .transform(normalize);
 
 /**
  * The server accepts a PATCH while the order is `scheduled` or `in_pharmacy`.
@@ -100,7 +158,32 @@ export const createOrderSchema = orderFields.transform(normalize);
 export const updateOrderSchema = orderFields
   .omit({ client_id: true, driver_id: true })
   .partial()
+  .superRefine(checkRanges)
   .transform(normalize);
+
+/**
+ * A dashboard-initiated optimization run.
+ *
+ * `time_range` is a run-level default the server applies only to stops with no
+ * promise of their own — it narrows an unscheduled afternoon, it does not
+ * re-promise a delivery a patient was already given a time for.
+ */
+export const optimizeRouteSchema = z
+  .object({
+    date: z.string().regex(PLAIN_DATE),
+    driver_id: z.string().uuid(),
+    time_range: z
+      .object({
+        start: z.string().regex(PLAIN_TIME),
+        end: z.string().regex(PLAIN_TIME),
+      })
+      .nullish()
+      .transform((range) => range ?? undefined),
+  })
+  .refine(
+    (input) => !input.time_range || input.time_range.start < input.time_range.end,
+    { path: ["time_range"], message: "time_range_inverted" },
+  );
 
 export const assignDriverSchema = z.object({
   order_id: z.string().uuid(),
@@ -131,6 +214,25 @@ export function orderFormFromFormData(formData: FormData) {
   const amount = String(formData.get("amount_due") ?? "").trim();
   const driverId = String(formData.get("driver_id") ?? "").trim();
 
+  /** An empty hidden input is "not set", not an empty address. */
+  const text = (field: string): string | null => {
+    const value = String(formData.get(field) ?? "").trim();
+    return value.length > 0 ? value : null;
+  };
+
+  /**
+   * The geocode the address picker resolved. Read as a unit: if either half
+   * of the coordinate is missing the whole geocode is dropped, because a
+   * half-resolved address is one the server would reject and one the router
+   * could not use anyway.
+   */
+  const latitude = Number(formData.get("address_latitude") ?? "");
+  const longitude = Number(formData.get("address_longitude") ?? "");
+  const located =
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    String(formData.get("address_latitude") ?? "").trim().length > 0;
+
   // Package rows travel as two parallel repeated fields, paired by index. That
   // keeps the form inside its plain uncontrolled-FormData model rather than
   // smuggling JSON through a hidden input.
@@ -149,9 +251,15 @@ export function orderFormFromFormData(formData: FormData) {
     driver_id: driverId.length > 0 ? driverId : null,
     patient_name: String(formData.get("patient_name") ?? ""),
     address: String(formData.get("address") ?? ""),
+    place_id: located ? text("address_place_id") : null,
+    formatted_address: located ? text("address_formatted") : null,
+    latitude: located ? latitude : null,
+    longitude: located ? longitude : null,
     phone_number: String(formData.get("phone_number") ?? ""),
     delivery_date: String(formData.get("delivery_date") ?? ""),
     delivery_window: String(formData.get("delivery_window") ?? "AM"),
+    requested_time_start: text("requested_time_start"),
+    requested_time_end: text("requested_time_end"),
     payment_status: String(formData.get("payment_status") ?? "unpaid"),
     amount_due: amount.length > 0 ? amount : null,
     requires_cooler_bag: formData.get("requires_cooler_bag") === "on",

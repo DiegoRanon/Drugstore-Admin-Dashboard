@@ -16,12 +16,23 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-/** Only what the picker renders. `notes` deliberately stays on the server. */
+/**
+ * What the picker renders, plus the geocode it hands to the order form.
+ *
+ * `notes` deliberately stays on the server. The coordinates come along because
+ * an order created from a saved patient should inherit the address they
+ * already standardized — re-picking it from Places would bill a second lookup
+ * to learn something we know.
+ */
 export type PickerClient = {
   id: string;
   name: string;
   address: string;
   phone_number: string;
+  place_id: string | null;
+  formatted_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 /**

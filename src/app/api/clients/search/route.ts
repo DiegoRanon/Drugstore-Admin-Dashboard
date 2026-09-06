@@ -12,8 +12,9 @@ import { getSession } from "@/lib/dal/session";
  * list into the HTML payload of pages that never open the drawer — PII exposed
  * for no reason (PRD 3.1).
  *
- * Returns only the four fields the picker renders. `notes` in particular stays
- * server-side; it is not needed to choose a patient.
+ * Returns only what the picker renders, plus the saved geocode the order form
+ * inherits. `notes` in particular stays server-side; it is not needed to
+ * choose a patient.
  */
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -39,6 +40,10 @@ export async function GET(request: NextRequest) {
           name: client.name,
           address: client.address,
           phone_number: client.phone_number,
+          place_id: client.place_id,
+          formatted_address: client.formatted_address,
+          latitude: client.latitude,
+          longitude: client.longitude,
         })),
       },
       { headers: { "cache-control": "no-store" } },

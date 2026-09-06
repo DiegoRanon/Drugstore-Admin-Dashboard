@@ -40,6 +40,26 @@ export type CreateOrderBody =
 export type UpdateOrderBody =
   paths["/v1/orders/{id}"]["patch"]["requestBody"]["content"]["application/json"];
 
+/**
+ * Route optimization (`POST /v1/orders/route/optimize`).
+ *
+ * `orders` comes back in the order the driver will actually see it, which is
+ * priority-first and only then the optimizer's sequence — the server re-reads
+ * the queue rather than echoing the solver, so the dashboard and the driver
+ * app cannot show different routes.
+ */
+export type OptimizeRouteBody =
+  paths["/v1/orders/route/optimize"]["post"]["requestBody"]["content"]["application/json"];
+export type OptimizeRouteResult =
+  paths["/v1/orders/route/optimize"]["post"]["responses"][200]["content"]["application/json"];
+export type RouteEstimate = NonNullable<OptimizeRouteResult["estimates"]>[number];
+
+/** Address standardization, brokered by the server (the key never ships here). */
+export type PlaceSuggestion =
+  paths["/v1/places/autocomplete"]["get"]["responses"][200]["content"]["application/json"]["data"][number];
+export type ResolvedPlace =
+  paths["/v1/places/{place_id}"]["get"]["responses"][200]["content"]["application/json"];
+
 export type Client =
   paths["/v1/clients/"]["get"]["responses"][200]["content"]["application/json"]["data"][number];
 export type CreateClientBody =

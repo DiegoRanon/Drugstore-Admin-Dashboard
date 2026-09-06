@@ -21,7 +21,8 @@
     "signOut": "Sign out",
     "language": "Language",
     "searchPatients": "Search patients…",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "routes": "Routes"
   },
   "board": {
     "today": "Today",
@@ -171,7 +172,11 @@
     "saveAndAddAnother": "Save and add another",
     "fullForm": "Full form",
     "close": "Close",
-    "created": "Delivery created for {patient}."
+    "created": "Delivery created for {patient}.",
+    "timeRange": "Time range",
+    "timeRangeStart": "From",
+    "timeRangeEnd": "Until",
+    "timeRangeHint": "Optional. If the pharmacy promised the patient a specific time, route optimization will respect it."
   },
   "clients": {
     "title": "Patient management",
@@ -351,5 +356,25 @@
     "noDeliveries": "No deliveries",
     "deliveries": "{count, plural, one {# delivery} other {# deliveries}}",
     "scheduledCount": "{count, plural, one {# scheduled} other {# scheduled}}"
+  },
+  "address": {
+    "located": "Address located — this delivery will be included in the route.",
+    "notLocated": "Address not located. This delivery will be added at the end of the route."
+  },
+  "routes": {
+    "optimize": "Optimize route",
+    "optimized": "Route optimized — {count} stops.",
+    "degraded": "Route unchanged: the optimization service is unavailable.",
+    "degradedBanner": "This is the previous order, not the optimizer's. The service was unavailable.",
+    "from": "From",
+    "to": "Until",
+    "timeRangeHint": "The range applies only to stops with no promised time. A delivery already promised to a patient keeps its time.",
+    "stopCount": "{count, plural, one {# stop} other {# stops}}",
+    "window": "between {start} and {end}",
+    "distance": "{km} km",
+    "ungeocoded": "{count, plural, one {# address is not located} other {# addresses are not located}} — {count, plural, one {it will be added} other {they will be added}} at the end of the route.",
+    "unassigned": "{count, plural, one {# delivery with no driver} other {# deliveries with no driver}}",
+    "empty": "No routes for this day",
+    "emptyHint": "Assign a driver to some deliveries to build a route."
   }
 }

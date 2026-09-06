@@ -5,6 +5,8 @@ import { cache } from "react";
 import type {
   CalendarMonth,
   CreateOrderBody,
+  OptimizeRouteBody,
+  OptimizeRouteResult,
   Order,
   OrderDetail,
   OrderStatus,
@@ -43,6 +45,25 @@ export async function listOrders(
       }),
     cursor,
   );
+}
+
+/**
+ * Sequences one driver's day (Route Optimizer).
+ *
+ * Writes `sequence_number` on the server, so this is a mutation despite
+ * reading like a query. The response is the driver's stops already in the
+ * order they will see them — priority first, then the optimizer's sequence —
+ * because the server re-reads the queue rather than echoing the solver.
+ */
+export async function optimizeRoute(
+  body: OptimizeRouteBody,
+): Promise<OptimizeRouteResult> {
+  const token = await requireAccessToken();
+  return apiFetch<OptimizeRouteResult>("/v1/orders/route/optimize", {
+    method: "POST",
+    token,
+    body,
+  });
 }
 
 /** The board: one day, both windows, newest state. */

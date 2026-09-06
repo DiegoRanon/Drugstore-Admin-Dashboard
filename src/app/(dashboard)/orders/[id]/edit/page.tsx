@@ -79,9 +79,23 @@ export default async function EditOrderPage({ params }: PageProps<"/orders/[id]/
             defaults={{
               patientName: order.patient_name,
               address: order.address,
+              /*
+                Seeded so an edit that does not touch the address keeps its
+                geocode. Without this the picker would open "not located" and
+                submit a null coordinate, silently dropping the stop out of
+                route optimization on an unrelated edit.
+              */
+              addressGeocode: {
+                place_id: order.place_id,
+                formatted_address: order.formatted_address,
+                latitude: order.latitude,
+                longitude: order.longitude,
+              },
               phoneNumber: order.phone_number,
               deliveryDate: order.delivery_date,
               deliveryWindow: order.delivery_window,
+              requestedTimeStart: order.requested_time_start,
+              requestedTimeEnd: order.requested_time_end,
               paymentStatus: order.payment_status,
               amountDue: order.amount_due,
               requiresCoolerBag: order.requires_cooler_bag,

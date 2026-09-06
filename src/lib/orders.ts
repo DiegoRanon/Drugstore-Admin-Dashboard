@@ -206,6 +206,51 @@ export function sortForBoard(orders: Order[]): Order[] {
   });
 }
 
+/**
+ * The order the *driver* sees, which is not the order the board shows.
+ *
+ * Mirrors the server's queue sort exactly — `is_priority DESC,
+ * sequence_number ASC NULLS LAST, created_at ASC` — and the driver app's own
+ * `sortStops`. The route view has to use this rather than `sortForBoard`, or
+ * the pharmacy would be looking at a different sequence than the person
+ * driving it, which is the specific failure this whole feature exists to
+ * prevent.
+ *
+ * Priority sorting ahead of the route position, not within it, is deliberate:
+ * a stop the pharmacist flagged urgent goes first even when that costs
+ * kilometres.
+ */
+export function sortForDriverQueue(orders: Order[]): Order[] {
+  return [...orders].sort((a, b) => {
+    if (a.is_priority !== b.is_priority) return a.is_priority ? -1 : 1;
+    const aSeq = a.sequence_number ?? Number.MAX_SAFE_INTEGER;
+    const bSeq = b.sequence_number ?? Number.MAX_SAFE_INTEGER;
+    if (aSeq !== bSeq) return aSeq - bSeq;
+    return a.created_at.localeCompare(b.created_at);
+  });
+}
+
+/** The stops a driver still has to make on a given day. */
+export const ROUTABLE_STATUSES = ["in_pharmacy", "picked_up"] as const;
+
+export function activeStopsByDriver(orders: Order[]): Map<string, Order[]> {
+  const byDriver = new Map<string, Order[]>();
+
+  for (const order of orders) {
+    if (!order.driver_id) continue;
+    if (!ROUTABLE_STATUSES.includes(order.status as (typeof ROUTABLE_STATUSES)[number])) {
+      continue;
+    }
+    byDriver.set(order.driver_id, [...(byDriver.get(order.driver_id) ?? []), order]);
+  }
+
+  for (const [driverId, stops] of byDriver) {
+    byDriver.set(driverId, sortForDriverQueue(stops));
+  }
+
+  return byDriver;
+}
+
 export function groupByWindow(orders: Order[]): {
   AM: Order[];
   PM: Order[];

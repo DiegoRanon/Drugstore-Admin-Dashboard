@@ -21,7 +21,8 @@
     "signOut": "Se déconnecter",
     "language": "Langue",
     "searchPatients": "Rechercher un patient…",
-    "calendar": "Calendrier"
+    "calendar": "Calendrier",
+    "routes": "Itinéraires"
   },
   "board": {
     "today": "Aujourd'hui",
@@ -171,7 +172,11 @@
     "saveAndAddAnother": "Enregistrer et ajouter un autre",
     "fullForm": "Formulaire complet",
     "close": "Fermer",
-    "created": "Livraison créée pour {patient}."
+    "created": "Livraison créée pour {patient}.",
+    "timeRange": "Plage horaire",
+    "timeRangeStart": "À partir de",
+    "timeRangeEnd": "Jusqu'à",
+    "timeRangeHint": "Facultatif. Si la pharmacie a promis une heure précise au patient, l'optimisation en tiendra compte."
   },
   "clients": {
     "title": "Gestion des patients",
@@ -351,5 +356,25 @@
     "noDeliveries": "Aucune livraison",
     "deliveries": "{count, plural, one {# livraison} other {# livraisons}}",
     "scheduledCount": "{count, plural, one {# planifiée} other {# planifiées}}"
+  },
+  "address": {
+    "located": "Adresse localisée — cette livraison sera intégrée à l'itinéraire.",
+    "notLocated": "Adresse non localisée. La livraison sera ajoutée à la fin de l'itinéraire."
+  },
+  "routes": {
+    "optimize": "Optimiser l'itinéraire",
+    "optimized": "Itinéraire optimisé — {count} arrêts.",
+    "degraded": "Itinéraire inchangé : le service d'optimisation est indisponible.",
+    "degradedBanner": "Ceci est l'ordre précédent, pas celui de l'optimiseur. Le service était indisponible.",
+    "from": "À partir de",
+    "to": "Jusqu'à",
+    "timeRangeHint": "La plage ne s'applique qu'aux arrêts sans heure promise. Une livraison déjà promise à un patient garde son heure.",
+    "stopCount": "{count, plural, one {# arrêt} other {# arrêts}}",
+    "window": "entre {start} et {end}",
+    "distance": "{km} km",
+    "ungeocoded": "{count, plural, one {# adresse non localisée} other {# adresses non localisées}} — {count, plural, one {elle sera ajoutée} other {elles seront ajoutées}} à la fin de l'itinéraire.",
+    "unassigned": "{count, plural, one {# livraison sans livreur} other {# livraisons sans livreur}}",
+    "empty": "Aucun itinéraire pour cette journée",
+    "emptyHint": "Assignez un livreur à des livraisons pour préparer un itinéraire."
   }
 }
