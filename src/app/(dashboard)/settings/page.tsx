@@ -2,8 +2,10 @@ import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
 import { PasswordForm } from "@/components/settings/password-form";
+import { PharmacyForm } from "@/components/settings/pharmacy-form";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { Separator } from "@/components/ui/separator";
+import { getOrganization } from "@/lib/dal/organization";
 import { requireSession } from "@/lib/dal/session";
 
 /** Renders the signed-in user's own details behind the session. */
@@ -12,6 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const t = await getTranslations();
   const { user } = await requireSession();
+  const organization = await getOrganization();
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -32,6 +35,32 @@ export default async function SettingsPage() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="rounded-lg border bg-card p-5">
+        <h2 className="font-semibold">{t("settings.pharmacy")}</h2>
+        <Separator className="my-4" />
+
+        {/*
+          The address here is the depot the route optimizer starts from and
+          returns to, so this is a routing setting wearing a profile's
+          clothes. The form says so rather than leaving an admin to wonder why
+          a contact detail lives next to their password.
+        */}
+        <p className="mb-4 text-sm text-muted-foreground">
+          {t("settings.pharmacyIntro")}
+        </p>
+
+        <PharmacyForm
+          located={organization.latitude !== null}
+          defaultValue={{
+            address: organization.address ?? "",
+            place_id: organization.place_id,
+            formatted_address: organization.formatted_address,
+            latitude: organization.latitude,
+            longitude: organization.longitude,
+          }}
+        />
       </section>
 
       <section className="rounded-lg border bg-card p-5">

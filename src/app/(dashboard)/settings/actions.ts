@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 import {
   fieldErrorsOf,
@@ -10,12 +11,17 @@ import {
   type ActionResult,
 } from "@/lib/actions/result";
 import { changePassword } from "@/lib/dal/auth";
+import { updateOrganizationAddress } from "@/lib/dal/organization";
 import { requireSession } from "@/lib/dal/session";
 import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from "@/lib/session/cookie";
 import {
   changePasswordSchema,
   passwordFormFromFormData,
 } from "@/lib/schemas/password";
+import {
+  pharmacyAddressSchema,
+  pharmacyFormFromFormData,
+} from "@/lib/schemas/organization";
 
 /**
  * Changing a password revokes **every** session, including this one (PRD 5.7).
@@ -46,4 +52,36 @@ export async function changePasswordAction(
   store.set(SESSION_COOKIE, "", { ...SESSION_COOKIE_OPTIONS, maxAge: 0 });
 
   return succeed(undefined);
+}
+
+/**
+ * Sets the pharmacy address, and with it the depot every route is solved
+ * around.
+ *
+ * `organizations.latitude/longitude` is the start and end location the route
+ * optimizer sends to Google, and the origin the driver app measures ETAs
+ * from. Both silently fall back — an unanchored open tour, a degraded ETA —
+ * so until this form existed a missing depot was invisible from the product.
+ *
+ * Revalidates `/routes` as well as this page: the next optimize run reads the
+ * new coordinate, and the stale sequence on screen was solved without it.
+ */
+export async function updatePharmacyAddressAction(
+  formData: FormData,
+): Promise<ActionResult<{ located: boolean }>> {
+  await requireSession();
+
+  const parsed = pharmacyAddressSchema.safeParse(
+    pharmacyFormFromFormData(formData),
+  );
+  if (!parsed.success) return invalid(fieldErrorsOf(parsed.error));
+
+  try {
+    const organization = await updateOrganizationAddress(parsed.data);
+    revalidatePath("/settings");
+    revalidatePath("/routes");
+    return succeed({ located: organization.latitude !== null });
+  } catch (error) {
+    return toFailure(error);
+  }
 }
