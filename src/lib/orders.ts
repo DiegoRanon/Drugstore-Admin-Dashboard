@@ -67,7 +67,7 @@ export const ORDER_STATUSES = Object.keys(STATUS_STYLE) as OrderStatus[];
  * package is in the driver's van and the pharmacy is owed a handover. Only
  * `returned_to_pharmacy` closes that loop. Collapsing the two makes a failed
  * delivery look settled on the board at exactly the moment somebody has to
- * chase it (drugstore-server/docs/delivery-workflow.md).
+ * chase it (medibus-server/docs/delivery-workflow.md).
  *
  * A `Record`, not an array, so a new status has to be classified here before
  * the code compiles.
@@ -114,7 +114,7 @@ export function isAwaitingHandover(status: OrderStatus): boolean {
 /**
  * An admin sees patient details at every status. The server's
  * `PII_VISIBLE_STATUSES` cliff governs the *driver* serializer and is
- * deliberately not mirrored here — see drugstore-server/docs/privacy-rules.md.
+ * deliberately not mirrored here — see medibus-server/docs/privacy-rules.md.
  */
 
 /**

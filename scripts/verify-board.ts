@@ -3,7 +3,7 @@
  *
  *   npm run verify:board
  *
- * Needs the drugstore-server (seeded) and the dashboard on http://localhost:3001.
+ * Needs the medibus-server (seeded) and the dashboard on http://localhost:3001.
  *
  * Creates a few deliveries for today so the board has something to show; they
  * are left in place afterwards, which is what makes the manual walkthrough

@@ -14,6 +14,6 @@ Responsibilities:
 
 Before modifying API requests:
 
-- Inspect the corresponding endpoint in ../drugstore-server.
+- Inspect the corresponding endpoint in ../medibus-server.
 - Check whether the driver application relies on the same response.
 - Preserve the delivery statuses defined in ../docs/delivery-workflow.md.

@@ -8,7 +8,7 @@
  * revalidation, and the toast all have to work together, and only a browser
  * exercises that chain.
  *
- * Needs the drugstore-server (seeded) and `npm run dev` running.
+ * Needs the medibus-server (seeded) and `npm run dev` running.
  */
 import { config as loadEnv } from "dotenv";
 

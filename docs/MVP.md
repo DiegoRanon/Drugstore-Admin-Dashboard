@@ -1,8 +1,8 @@
 ### 1. Product Overview
 
-- **Project Name:** Drugstore Delivery App B2B
+- **Project Name:** Medibus Delivery App B2B
 - **Status:** Development Planning
-- **Core Objective:** Resolve drugstore delivery challenges by prioritizing simplicity for both drivers and pharmacists.
+- **Core Objective:** Resolve medibus delivery challenges by prioritizing simplicity for both drivers and pharmacists.
 - **Strategy:** Improve upon competitors (Mobilus, Livramed) by focusing on streamlined logistics, real-time driver tracking, and an absolute minimum-friction interface for the driver.
 
 ### 2. Technology Stack & Infrastructure
@@ -20,7 +20,7 @@
 
 - **Platforms:** Mobile application (Driver Panel) and a web-based dashboard (Admin Panel).
 - **Authentication:** Unified login interface offering admin or driver roles.
-- **Access Control:** Organization invite codes (keys). Drugstores use these to securely link a driver to their system and dispatch specific delivery queues.
+- **Access Control:** Organization invite codes (keys). Medibuss use these to securely link a driver to their system and dispatch specific delivery queues.
 
 ### 4. Pharmacy Integration (MVP Scope)
 
@@ -31,7 +31,7 @@
 ### 5. Driver Panel MVP
 
 - **Proof of Delivery (PoD):** Maximum simplicity. A single tap to confirm drop-off.
-- **Failed Deliveries:** A straightforward "Return Order" button. If a patient is unavailable, this instantly updates the status and routes the driver back to the drugstore to return the physical package.
+- **Failed Deliveries:** A straightforward "Return Order" button. If a patient is unavailable, this instantly updates the status and routes the driver back to the medibus to return the physical package.
 - **Transactions:** The app handles no digital payment processing. If an order is flagged as unpaid by the admin, the driver collects payment using a physical POS machine at the door and simply taps a "Payment Collected" checkbox in the app.
 - **Route Optimization:** Real-time organization of the delivery queue to provide the shortest itinerary via Mapbox.
 - **Workflow Tracking:** Categorized tracking statuses: in pharmacy, picked up (prise en charge), and completed.
@@ -55,9 +55,9 @@
 - **Encryption Standards:** All manually entered logistical data (names, addresses, phone numbers) must be strictly encrypted in transit and at rest.
 - **Data Expiration:** Strict data minimization. Drivers only have access to a patient's address and phone number while the delivery is active. Once an order is marked as completed or returned, that data is permanently wiped from the driver's device interface.### 1. Product Overview
 
-- **Project Name:** Drugstore Delivery App B2B
+- **Project Name:** Medibus Delivery App B2B
 - **Status:** Development Planning
-- **Core Objective:** Resolve drugstore delivery challenges by prioritizing simplicity for both drivers and pharmacists.
+- **Core Objective:** Resolve medibus delivery challenges by prioritizing simplicity for both drivers and pharmacists.
 - **Strategy:** Improve upon competitors (Mobilus, Livramed) by focusing on streamlined logistics, real-time driver tracking, and an absolute minimum-friction interface for the driver.
 
 ### 2. Technology Stack & Infrastructure
@@ -75,7 +75,7 @@
 
 - **Platforms:** Mobile application (Driver Panel) and a web-based dashboard (Admin Panel).
 - **Authentication:** Unified login interface offering admin or driver roles.
-- **Access Control:** Organization invite codes (keys). Drugstores use these to securely link a driver to their system and dispatch specific delivery queues.
+- **Access Control:** Organization invite codes (keys). Medibuss use these to securely link a driver to their system and dispatch specific delivery queues.
 
 ### 4. Pharmacy Integration (MVP Scope)
 
@@ -86,7 +86,7 @@
 ### 5. Driver Panel MVP
 
 - **Proof of Delivery (PoD):** Maximum simplicity. A single tap to confirm drop-off.
-- **Failed Deliveries:** A straightforward "Return Order" button. If a patient is unavailable, this instantly updates the status and routes the driver back to the drugstore to return the physical package.
+- **Failed Deliveries:** A straightforward "Return Order" button. If a patient is unavailable, this instantly updates the status and routes the driver back to the medibus to return the physical package.
 - **Transactions:** The app handles no digital payment processing. If an order is flagged as unpaid by the admin, the driver collects payment using a physical POS machine at the door and simply taps a "Payment Collected" checkbox in the app.
 - **Route Optimization:** Real-time organization of the delivery queue to provide the shortest itinerary via Mapbox.
 - **Workflow Tracking:** Categorized tracking statuses: in pharmacy, picked up (prise en charge), and completed.

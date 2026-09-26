@@ -4,7 +4,7 @@
  *
  *   npm run verify:session
  *
- * Needs the drugstore-server on API_BASE_URL (seeded) and, for the HTTP
+ * Needs the medibus-server on API_BASE_URL (seeded) and, for the HTTP
  * section, the dashboard on http://localhost:3001.
  *
  * The centrepiece is the concurrency test. The server rotates refresh tokens

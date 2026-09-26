@@ -4,7 +4,7 @@
  *
  *   npm run verify:api
  *
- * Requires the drugstore-server running on API_BASE_URL with its seed applied.
+ * Requires the medibus-server running on API_BASE_URL with its seed applied.
  * The DAL imports `server-only`, so this runs under the `react-server`
  * condition (see the npm script).
  *

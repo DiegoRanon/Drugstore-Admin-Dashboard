@@ -32,7 +32,7 @@ const PORT = Number(process.env.PROD_PORT ?? 3002);
 const APP = `http://localhost:${PORT}`;
 const EMAIL = process.env.SEED_ADMIN_EMAIL ?? "admin@stlaurent.example.ca";
 const PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "DevPassword123!";
-const DB_CONTAINER = process.env.DB_CONTAINER ?? "drugstore-postgres";
+const DB_CONTAINER = process.env.DB_CONTAINER ?? "medibus-postgres";
 
 let passed = 0;
 let failed = 0;
@@ -53,7 +53,7 @@ function auditCount(action: string, since: string): number {
   const sql = `SELECT count(*) FROM access_audit_log WHERE action = '${action}' AND occurred_at > '${since}'::timestamptz;`;
   const out = execFileSync(
     "docker",
-    ["exec", DB_CONTAINER, "psql", "-U", "drugstore", "-d", "drugstore", "-t", "-A", "-c", sql],
+    ["exec", DB_CONTAINER, "psql", "-U", "medibus", "-d", "medibus", "-t", "-A", "-c", sql],
     { encoding: "utf8" },
   );
   return Number(out.trim());
@@ -62,7 +62,7 @@ function auditCount(action: string, since: string): number {
 function dbNow(): string {
   const out = execFileSync(
     "docker",
-    ["exec", DB_CONTAINER, "psql", "-U", "drugstore", "-d", "drugstore", "-t", "-A", "-c", "SELECT now();"],
+    ["exec", DB_CONTAINER, "psql", "-U", "medibus", "-d", "medibus", "-t", "-A", "-c", "SELECT now();"],
     { encoding: "utf8" },
   );
   return out.trim();

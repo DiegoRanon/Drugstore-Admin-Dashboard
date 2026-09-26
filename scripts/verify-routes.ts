@@ -9,7 +9,7 @@
  * Action, and the optimizer turns them into the order a driver will follow.
  * Any one of those working in isolation proves nothing.
  *
- * Needs the drugstore-server (seeded) and `npm run dev` running.
+ * Needs the medibus-server (seeded) and `npm run dev` running.
  */
 import { config as loadEnv } from "dotenv";
 

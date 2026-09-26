@@ -1,6 +1,6 @@
 # PRD — Admin Dashboard (Next.js)
 
-**Product:** Drugstore Delivery App B2B
+**Product:** Medibus Delivery App B2B
 **Component:** Pharmacy-facing web dashboard
 **Status:** Development Planning
 **Version:** 0.1 (MVP) — written against server API v1, 30 operations across six route groups
@@ -244,7 +244,7 @@ Quebec-facing commercial software. French is the default and must be complete, n
 `openapi-typescript` against the server's `openapi.json`, committed to the dashboard repo and regenerated whenever the server's route schemas change. Hand-written request or response interfaces are not permitted — that is the drift the generated spec exists to prevent.
 
 ```bash
-npx openapi-typescript ../drugstore-server/openapi.json -o src/api/schema.d.ts
+npx openapi-typescript ../medibus-server/openapi.json -o src/api/schema.d.ts
 ```
 
 ### 6.2 Fetch layer
